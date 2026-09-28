@@ -1,35 +1,49 @@
 import { useState } from 'react'
 import { useVoting } from '../../state/VotingContext.jsx'
-import { CandidateList } from './CandidateList.jsx'
+import { CandidateGrid } from './CandidateGrid.jsx'
 import { CandidateDetailModal } from './CandidateDetailModal.jsx'
-import { SelectionSummary } from './SelectionSummary.jsx'
+import { ConfirmVoteModal } from '../Confirmation/ConfirmVoteModal.jsx'
 
-export function BallotPage({ onContinue }) {
+export function BallotPage() {
   const { candidatos, seleccion, seleccionarCandidato, error } = useVoting()
   const [candidatoDetalle, setCandidatoDetalle] = useState(null)
+  const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
 
   const candidatoSeleccionado = candidatos.find((candidato) => candidato.id === seleccion) ?? null
 
+  const handleToggle = (candidatoId) => {
+    seleccionarCandidato(seleccion === candidatoId ? null : candidatoId)
+  }
+
   return (
     <section className="ballot-page">
-      <h2>Papeleta de votación</h2>
-      <p className="ballot-page__instructions">Seleccione una candidatura y confirme su voto.</p>
-
-      <CandidateList
+      <CandidateGrid
         candidatos={candidatos}
         seleccion={seleccion}
-        onSelect={seleccionarCandidato}
-        onViewDetail={setCandidatoDetalle}
+        onToggle={handleToggle}
+        onVerFoto={setCandidatoDetalle}
       />
+
+      {error && <p className="error-message" role="alert">{error}</p>}
+
+      <button
+        type="button"
+        className="btn btn--primary btn--votar"
+        disabled={!candidatoSeleccionado}
+        onClick={() => setMostrarConfirmacion(true)}
+      >
+        Votar
+      </button>
 
       <CandidateDetailModal candidato={candidatoDetalle} onClose={() => setCandidatoDetalle(null)} />
 
-      <SelectionSummary
-        candidatoSeleccionado={candidatoSeleccionado}
-        onChangeSelection={() => seleccionarCandidato(null)}
-        onContinue={onContinue}
-        error={error}
-      />
+      {mostrarConfirmacion && (
+        <ConfirmVoteModal
+          candidato={candidatoSeleccionado}
+          onCancelar={() => setMostrarConfirmacion(false)}
+          onConfirmado={() => setMostrarConfirmacion(false)}
+        />
+      )}
     </section>
   )
 }

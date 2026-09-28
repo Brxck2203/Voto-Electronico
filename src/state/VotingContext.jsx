@@ -30,7 +30,7 @@ const VotingContext = createContext(null)
 
 export function VotingProvider({ children }) {
   const repository = useMemo(() => new InMemoryVotingRepository(candidatosIniciales), [])
-  const [votanteId, setVotanteId] = useState(() => crypto.randomUUID())
+  const [votanteId] = useState(() => crypto.randomUUID())
   const [seleccion, setSeleccion] = useState(null)
   const [error, setError] = useState(null)
   const [votoConfirmado, setVotoConfirmado] = useState(false)
@@ -56,29 +56,13 @@ export function VotingProvider({ children }) {
     }
   }
 
-  const nuevaSesionVotante = () => {
-    setVotanteId(crypto.randomUUID())
-    setSeleccion(null)
-    setError(null)
-    setVotoConfirmado(false)
-  }
-
-  const reintentarConMismoVotante = () => {
-    setSeleccion(null)
-    setError(null)
-    setVotoConfirmado(false)
-  }
-
   const value = {
     candidatos: repository.obtenerCandidatos(),
     seleccion,
     seleccionarCandidato,
     confirmarVoto,
-    nuevaSesionVotante,
-    reintentarConMismoVotante,
     error,
     votoConfirmado,
-    votanteId,
     obtenerResultados: () => repository.obtenerResultados(),
   }
 

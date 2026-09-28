@@ -1,4 +1,3 @@
-// Cubre HU-02: ver la información detallada de una candidatura.
 export function CandidateDetailModal({ candidato, onClose }) {
   if (!candidato) return null
 
@@ -11,9 +10,6 @@ export function CandidateDetailModal({ candidato, onClose }) {
         <h2>{candidato.nombre}</h2>
         <p className="modal-card__agrupacion">{candidato.agrupacion}</p>
         <p>{candidato.propuesta}</p>
-        <button type="button" className="btn btn--secondary" onClick={onClose}>
-          Volver a la papeleta
-        </button>
       </div>
     </div>
   )
