@@ -1,0 +1,214 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.app__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.app__header h1 {
+  margin-bottom: 0.25rem;
+  color: #1e3a8a;
+}
+
+.app__header p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.ballot-page__instructions {
+  color: #4b5563;
+}
+
+.candidate-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.candidate-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+  transition: border-color 0.15s ease;
+}
+
+.candidate-card--selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.candidate-card__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1e3a8a;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.candidate-card__info {
+  flex: 1;
+}
+
+.candidate-card__info h3 {
+  margin: 0;
+}
+
+.candidate-card__agrupacion {
+  margin: 0.15rem 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.candidate-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.btn--primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn--primary:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+}
+
+.btn--secondary {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.btn--secondary:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.btn--selected {
+  background: #16a34a;
+  color: #fff;
+}
+
+.selection-summary,
+.confirm-vote-screen,
+.success-screen {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.selection-summary__empty {
+  color: #9ca3af;
+}
+
+.selection-summary__actions,
+.confirm-vote-screen__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.error-message {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.empty-state {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+}
+
+.modal-card__close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.modal-card__agrupacion {
+  color: #6b7280;
+  margin-top: -0.5rem;
+}
+
+.success-screen {
+  text-align: center;
+}
+
+.success-screen__demo {
+  margin-top: 1.5rem;
+  border-top: 1px dashed #d1d5db;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.success-screen__demo-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  margin: 0;
+}

@@ -3,21 +3,52 @@ import { InMemoryVotingRepository } from '../infrastructure/InMemoryVotingReposi
 import { Candidato } from '../domain/models.js'
 
 const candidatosIniciales = [
-  new Candidato(1, 'Candidato A', '', 'Propuesta A', 'Agrupación 1'),
-  new Candidato(2, 'Candidato B', '', 'Propuesta B', 'Agrupación 2'),
+  new Candidato(
+    1,
+    'Ana Rodríguez',
+    '',
+    'Fortalecer la comunicación interna y digitalizar los trámites de la organización.',
+    'Agrupación Renovación',
+  ),
+  new Candidato(
+    2,
+    'Luis Fernández',
+    '',
+    'Impulsar beneficios adicionales y transparencia financiera para los agremiados.',
+    'Agrupación Unidad',
+  ),
+  new Candidato(
+    3,
+    'Mariana Solano',
+    '',
+    'Mejorar la atención al asociado y modernizar los servicios de la organización.',
+    'Agrupación Avance',
+  ),
 ]
 
 const VotingContext = createContext(null)
 
 export function VotingProvider({ children }) {
   const repository = useMemo(() => new InMemoryVotingRepository(candidatosIniciales), [])
+  const [votanteId, setVotanteId] = useState(() => crypto.randomUUID())
   const [seleccion, setSeleccion] = useState(null)
   const [error, setError] = useState(null)
+  const [votoConfirmado, setVotoConfirmado] = useState(false)
 
-  const votar = (votanteId) => {
+  const seleccionarCandidato = (candidatoId) => {
+    setSeleccion(candidatoId)
+    setError(null)
+  }
+
+  const confirmarVoto = () => {
+    if (seleccion == null) {
+      setError('Debe seleccionar una opción antes de confirmar su voto.')
+      return false
+    }
     try {
       repository.registrarVoto(votanteId, seleccion)
       setError(null)
+      setVotoConfirmado(true)
       return true
     } catch (err) {
       setError(err.message)
@@ -25,12 +56,29 @@ export function VotingProvider({ children }) {
     }
   }
 
+  const nuevaSesionVotante = () => {
+    setVotanteId(crypto.randomUUID())
+    setSeleccion(null)
+    setError(null)
+    setVotoConfirmado(false)
+  }
+
+  const reintentarConMismoVotante = () => {
+    setSeleccion(null)
+    setError(null)
+    setVotoConfirmado(false)
+  }
+
   const value = {
     candidatos: repository.obtenerCandidatos(),
     seleccion,
-    setSeleccion,
-    votar,
+    seleccionarCandidato,
+    confirmarVoto,
+    nuevaSesionVotante,
+    reintentarConMismoVotante,
     error,
+    votoConfirmado,
+    votanteId,
     obtenerResultados: () => repository.obtenerResultados(),
   }
 
