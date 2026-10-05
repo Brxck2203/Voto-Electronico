@@ -1,7 +1,7 @@
 import { CandidateSquare } from './CandidateSquare.jsx'
 
 // Mosaico de candidaturas, como una papeleta física.
-export function CandidateGrid({ candidatos, seleccion, onToggle, onVerFoto }) {
+export function CandidateGrid({ candidatos, seleccion, onToggle, onVerFoto, disabled = false }) {
   if (candidatos.length === 0) {
     return <p className="empty-state">No hay candidaturas registradas para esta elección.</p>
   }
@@ -15,6 +15,7 @@ export function CandidateGrid({ candidatos, seleccion, onToggle, onVerFoto }) {
           seleccionado={seleccion === candidato.id}
           onToggle={onToggle}
           onVerFoto={onVerFoto}
+          disabled={disabled}
         />
       ))}
     </div>

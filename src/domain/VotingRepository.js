@@ -6,6 +6,46 @@ export class VotingRepository {
     throw new Error('No implementado')
   }
 
+  obtenerCandidaturas() {
+    throw new Error('No implementado')
+  }
+
+  obtenerPuestos() {
+    throw new Error('No implementado')
+  }
+
+  guardarPuesto() {
+    throw new Error('No implementado')
+  }
+
+  eliminarPuesto() {
+    throw new Error('No implementado')
+  }
+
+  guardarCandidatura() {
+    throw new Error('No implementado')
+  }
+
+  actualizarRequisito() {
+    throw new Error('No implementado')
+  }
+
+  habilitarCandidatura() {
+    throw new Error('No implementado')
+  }
+
+  retirarCandidatura() {
+    throw new Error('No implementado')
+  }
+
+  obtenerJornadaIniciada() {
+    throw new Error('No implementado')
+  }
+
+  cambiarJornada() {
+    throw new Error('No implementado')
+  }
+
   registrarVoto(votanteId, candidatoId) {
     throw new Error('No implementado')
   }

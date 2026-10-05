@@ -1,5 +1,5 @@
 // Representa una casilla de la papeleta: foto, nombre y casilla de marca.
-export function CandidateSquare({ candidato, seleccionado, onToggle, onVerFoto }) {
+export function CandidateSquare({ candidato, seleccionado, onToggle, onVerFoto, disabled = false }) {
   return (
     <div className={`candidate-square${seleccionado ? ' candidate-square--selected' : ''}`}>
       <button
@@ -23,6 +23,7 @@ export function CandidateSquare({ candidato, seleccionado, onToggle, onVerFoto }
           checked={seleccionado}
           onChange={() => onToggle(candidato.id)}
           aria-label={`Marcar voto por ${candidato.nombre}`}
+          disabled={disabled}
         />
         <span className="candidate-square__checkbox-box" aria-hidden="true" />
       </label>
