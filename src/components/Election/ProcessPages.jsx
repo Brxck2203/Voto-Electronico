@@ -51,10 +51,17 @@ export function VotingPage() {
           </p>
         ) : e.phase === 'ABIERTO' ? (
           v.session ? (
-            <p role="timer" className="session-clock">
-              Tiempo restante:{' '}
-              {Math.max(0, Math.ceil((v.session.expires - v.clock) / 1000))} s
-            </p>
+            <div>
+              <p role="timer" className="session-clock">
+                Tiempo restante:{' '}
+                {Math.max(0, Math.ceil((v.session.expires - v.clock) / 1000))} s
+              </p>
+              {v.session.expires - v.clock <= 30000 && (
+                <p role="alert" className="error-message">
+                  Su sesión está por vencer. Confirme el voto antes de que termine el tiempo.
+                </p>
+              )}
+            </div>
           ) : (
             <button className="btn btn--primary" onClick={v.begin}>
               Ingresar a votar
@@ -148,6 +155,11 @@ export function VotingPage() {
       {detail && (
         <Dialog title={detail.nombre} close={() => setDetail(null)}>
           <p>{detail.agrupacion}</p>
+          <h3>Biografía</h3>
+          <p className="pre-wrap">
+            {detail.biografia?.trim() || 'No hay biografía registrada para esta candidatura.'}
+          </p>
+          <h3>Propuestas</h3>
           <p className="pre-wrap">{detail.propuesta}</p>
         </Dialog>
       )}

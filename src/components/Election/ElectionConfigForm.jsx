@@ -19,7 +19,9 @@ export function ElectionConfigForm() {
     [groupName, setGroupName] = useState(''),
     [members, setMembers] = useState({}),
     [roll, setRoll] = useState(e.roll || []),
-    [admins, setAdmins] = useState(e.admins || [])
+    [admins, setAdmins] = useState(e.admins || []),
+    [showParticipation, setShowParticipation] = useState(false),
+    [showAudit, setShowAudit] = useState(false)
   const org = v.organizations.find((o) => o.id === v.context.orgId)
   useEffect(() => {
     setDraft(e)
@@ -85,6 +87,14 @@ export function ElectionConfigForm() {
           es irreversible. Editar una configuración publicada exige publicarla
           nuevamente.
         </p>
+        {e.configPending?.length > 0 && (
+          <div className="validation-list" role="status">
+            <h3>Parámetros pendientes</h3>
+            <ul>{e.configPending.map((item) => <li key={item}>PENDIENTE: {item}</li>)}</ul>
+            {e.configured === false &&
+              <p className="muted">Los valores iniciales del formulario son sugerencias; confirme y guárdelos antes de publicar.</p>}
+          </div>
+        )}
         {e.phase === 'BORRADOR' && (
           <div className="validation-list">
             <h3>Validación de publicación</h3>
@@ -113,6 +123,33 @@ export function ElectionConfigForm() {
             <span>Versión de configuración</span>
           </div>
         </div>
+        <div className="action-row">
+          <button type="button" className="btn btn--secondary"
+            onClick={() => setShowParticipation(!showParticipation)}>
+            {showParticipation ? 'Ocultar participación' : 'Consultar participación'}
+          </button>
+          <button type="button" className="btn btn--secondary"
+            onClick={() => setShowAudit(!showAudit)}>
+            {showAudit ? 'Ocultar auditoría' : 'Revisar separación de datos'}
+          </button>
+        </div>
+        {showParticipation && (
+          <div className="validation-list">
+            <h3>Participación por elector (sin revelar preferencias)</h3>
+            <p className="muted">Métricas agregadas: {v.read('monitor').emitted} emisiones de {v.read('monitor').eligible} electores.</p>
+            <ul>{v.read('participationStatus').map((r) => (
+              <li key={r.electorId}>{r.name}: {r.status}</li>
+            ))}</ul>
+          </div>
+        )}
+        {showAudit && (
+          <div className="validation-list">
+            <h3>Inspección de estructuras</h3>
+            <p>Participación: {v.read('auditStructure').participationFields.join(', ')}.</p>
+            <p>Papeletas: {v.read('auditStructure').ballotFields.join(', ')}.</p>
+            <p className="muted">No existe identificador individual compartido entre ambas colecciones. {v.read('auditStructure').caveat}</p>
+          </div>
+        )}
       </section>
       <form className="panel" onSubmit={save}>
         <h2>Datos y reglas</h2>
@@ -327,11 +364,8 @@ export function ElectionConfigForm() {
             <p key={g.id}>
               <strong>{g.name}</strong>:{' '}
               {g.members
-                .map(
-                  (m) =>
-                    e.candidates.find((c) => c.id === m.candidateId)?.nombre,
-                )
-                .join(', ')}
+                .map((m) => `${e.positions.find((p) => p.id === m.positionId)?.nombre || 'Puesto desconocido'}: ${e.candidates.find((c) => c.id === m.candidateId)?.nombre || 'Candidatura faltante'}`)
+                .join(' · ')}
             </p>
           ))}
         </section>
@@ -438,7 +472,7 @@ export function ElectionConfigForm() {
         {v.ballots.map((b) => (
           <div key={b.id}>
             <h3>
-              {b.name} · {b.min} a {b.max} selecciones
+              {b.name} · {b.min} a {b.max} selecciones · {b.options.length} opciones habilitadas
             </h3>
             <ol>
               {b.options.map((o) => (
@@ -447,6 +481,14 @@ export function ElectionConfigForm() {
             </ol>
           </div>
         ))}
+        {(e.status === 'PUBLICADO' || e.status === 'CERRADO') && (
+          <p role="status">
+            Orden de publicación v{v.read('verifyOrder').version}: {' '}
+            {v.read('verifyOrder').valid
+              ? 'Comprobado, sin opciones duplicadas ni omitidas.'
+              : 'ERROR: el orden publicado no coincide con las opciones.'}
+          </p>
+        )}
       </section>
       <form
         className="panel"
@@ -489,6 +531,9 @@ function PositionRules({ p, editable, mode, act }) {
   return (
     <details className="position-rules">
       <summary>{p.nombre}</summary>
+      {mode === 'POR_PUESTOS' && <p className="muted">
+        Límites actuales: {p.min} a {p.max}. Los límites máximos no pueden superar las opciones habilitadas.
+      </p>}
       <fieldset disabled={!editable}>
         {mode === 'POR_PUESTOS' && (
           <div className="inline-form">

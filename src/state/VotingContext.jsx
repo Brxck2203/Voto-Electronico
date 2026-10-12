@@ -157,6 +157,8 @@ export function VotingProvider({ children }) {
     actualizarRequisito: (id, name, value) =>
       run('requirement', id, name, value),
     habilitarCandidatura: (id) => run('enableCandidate', id),
+    revisarCandidatura: (id, decision) => run('reviewCandidate', id, decision),
+    deshabilitarOpcion: (id) => run('option', id, false),
     retirarCandidatura: (id) => run('withdraw', id),
   }
   return (

@@ -264,9 +264,11 @@ test('candidatura nueva no acepta habilitación inyectada y cambiar puesto exige
   })
   const added = s.view(admin, id).candidates.at(-1)
   assert.equal(added.estado, 'Pendiente')
-  assert.throws(() => s.enableCandidate(admin, id, added.id), /pendientes/)
+  assert.throws(() => s.enableCandidate(admin, id, added.id), /debe ser aprobada/)
   for (const r of added.requisitos)
     s.requirement(admin, id, added.id, r.nombre, true)
+  s.reviewCandidate(admin, id, added.id, 'Aprobado')
+  assert.equal(s.view(admin, id).candidates.at(-1).enabled, false)
   s.enableCandidate(admin, id, added.id)
   s.candidate(admin, id, { ...added, puestoId: e.positions[1].id }, added.id)
   const moved = s.view(admin, id).candidates.at(-1)
@@ -295,8 +297,55 @@ test('requisitos opcionales no impiden habilitar y nombres repetidos se rechazan
     { nombre: 'Opcional', obligatorio: false },
   ])
   s.requirement(admin, id, c.id, 'Obligatorio', true)
+  s.reviewCandidate(admin, id, c.id, 'Aprobado')
   s.enableCandidate(admin, id, c.id)
   assert.equal(s.view(admin, id).candidates[0].estado, 'Habilitado')
+})
+test('HU-02 y HU-09: guardar y consultar biografía, fotografía y propuesta sin inventar biografías', () => {
+  const { s } = fixture(), e = s.view(admin, id), c = e.candidates[0]
+  assert.equal(c.biografia, '')
+  s.candidate(admin, id, {
+    ...c,
+    biografia: 'Experiencia en la organización y participación comunitaria.',
+    presentacion: 'Mejorar la rendición de cuentas.',
+  }, c.id)
+  const updated = s.ballots(voter(1), id)[0].options.find((o) => o.id === c.id)
+  assert.equal(updated.biografia, 'Experiencia en la organización y participación comunitaria.')
+  assert.equal(updated.propuesta, 'Mejorar la rendición de cuentas.')
+  assert.throws(() => s.candidate(admin, id, { ...c, biografia: 25 }), /biografía/)
+})
+test('HU-12 y HU-13: aprobación, rechazo, pendiente y habilitación son operaciones independientes', () => {
+  const { s } = fixture(), e = s.view(admin, id), candidate = e.candidates[0]
+  s.reviewCandidate(admin, id, candidate.id, 'Rechazado')
+  let c = s.view(admin, id).candidates[0]
+  assert.equal(c.estado, 'Rechazado')
+  assert.equal(c.verificacion, 'Rechazado')
+  assert.equal(c.enabled, false)
+  assert.ok(!s.ballots(admin, id)[0].options.some((o) => o.id === candidate.id))
+  assert.throws(() => s.enableCandidate(admin, id, candidate.id), /debe ser aprobada/)
+  assert.throws(() => s.option(admin, id, candidate.id, true), /no habilitada/)
+  s.reviewCandidate(admin, id, candidate.id, 'Aprobado')
+  c = s.view(admin, id).candidates[0]
+  assert.equal(c.estado, 'Habilitado')
+  assert.equal(c.enabled, false) // Aprobar no implica estar en la papeleta.
+  s.option(admin, id, candidate.id, true)
+  assert.equal(s.view(admin, id).candidates[0].enabled, true)
+  s.requirement(admin, id, candidate.id, candidate.requisitos[0].nombre, false)
+  c = s.view(admin, id).candidates[0]
+  assert.equal(c.verificacion, 'Pendiente')
+  assert.equal(c.enabled, false)
+  assert.throws(() => s.reviewCandidate(admin, id, candidate.id, 'Aprobado'), /pendientes/)
+  assert.throws(() => s.reviewCandidate(admin, id, candidate.id, 'No válido'), /inválido/)
+  assert.throws(() => s.requirement(admin, id, candidate.id, candidate.requisitos[0].nombre, 'true'), /verdadero/)
+})
+test('HU-11 y HU-17: al eliminar un puesto también se limpian sus publicaciones; retirar conserva ficha', () => {
+  const { s } = fixture(), e = s.view(admin, id), candidate = e.candidates[0]
+  s.withdraw(admin, id, candidate.id)
+  assert.equal(s.view(admin, id).candidates.find((c) => c.id === candidate.id).estado, 'Retirado')
+  assert.ok(!s.ballots(admin, id)[0].options.some((o) => o.id === candidate.id))
+  const removedIds = new Set(e.candidates.filter((c) => c.puestoId === e.positions[0].id).map((c) => c.id))
+  s.deletePosition(admin, id, e.positions[0].id)
+  assert.ok(s.view(admin, id).posts.every((p) => !removedIds.has(p.candidateId)))
 })
 test('grupos requieren un candidato habilitado por puesto y se votan como unidad', () => {
   const { s, open } = fixture(),

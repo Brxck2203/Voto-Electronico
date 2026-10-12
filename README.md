@@ -48,3 +48,15 @@ La participación y las selecciones se almacenan por separado. Los registros de 
 Las fechas de inscripción son parte del calendario; el tribunal mantiene las candidaturas y verifica requisitos antes de la apertura. No se incorpora autoinscripción ni autenticación real. Las reglas institucionales para desempate, elegibilidad y asignación de pesos corresponden a la organización.
 
 Consulte [arquitectura](ARCHITECTURE.md) y [trazabilidad de implementación](docs/TRAZABILIDAD.md).
+
+
+## Continuación por historias de usuario (HU-01 a HU-69)
+
+Esta versión parte de `Voto-Electronico-main.zip` y continúa la Iteración 1, sin modificar los estilos ni la navegación principal. La especificación, matriz y plan están en `docs/`.
+
+- `npm ci` — instalar dependencias (requiere acceso a paquetes npm).
+- `npm test` — ejecutar 70 pruebas del dominio; HU-20 a HU-69 tienen 50 pruebas identificadas.
+- `npm run dev` — abrir la aplicación local.
+- `npm run build` — comprobar compilación de producción en el entorno con dependencias.
+
+**Aviso:** Prototipo académico en memoria. La identidad seleccionable desde la demostración no autentica personas; no usar para elecciones reales sin arquitectura, seguridad y auditoría adicionales.
