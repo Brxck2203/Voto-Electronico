@@ -861,3 +861,435 @@ body {
     flex-direction: column;
   }
 }
+
+/* Ciclo electoral */
+.workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0 1.5rem;
+}
+.workspace-header h1 {
+  margin: 0.3rem 0;
+  color: #183451;
+  font-size: 2.3rem;
+}
+.workspace-header p {
+  margin: 0.4rem 0;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: #456784;
+  font-weight: 700;
+}
+.phase-badge {
+  padding: 0.6rem 1rem;
+  border: 1px solid #b9cddd;
+  color: #204460;
+  background: #e8f2f6;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.demo-context {
+  padding: 1rem;
+  border: 1px dashed #9bb2c4;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  background: #edf3f7;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.process-selector {
+  max-width: 560px;
+  margin: 1rem 0;
+}
+.process-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 0;
+}
+.process-nav button {
+  border: 0;
+  padding: 0.8rem 1.1rem;
+  border-radius: 8px;
+  color: #244761;
+  background: #e1eaf0;
+  font: inherit;
+  cursor: pointer;
+}
+.process-nav button.active {
+  background: #173e5b;
+  color: white;
+}
+.panel {
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #dbe3e9;
+  border-radius: 14px;
+  margin: 1rem 0;
+}
+.panel h2 {
+  margin-top: 0;
+  color: #183451;
+  font-size: 1.35rem;
+}
+.panel h3 {
+  font-size: 1.05rem;
+}
+.panel label,
+.process-selector label,
+.demo-context label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.panel input:not([type='checkbox']),
+.panel select,
+.panel textarea,
+.process-selector select,
+.demo-context select {
+  padding: 0.65rem;
+  border: 1px solid #acbfce;
+  border-radius: 7px;
+  width: 100%;
+  font: inherit;
+  background: #fff;
+  color: #183451;
+}
+.panel input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #176889;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+fieldset:disabled {
+  opacity: 0.65;
+}
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 1rem 0;
+}
+.inline-form {
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+.inline-form input {
+  flex: 1;
+  min-width: 120px;
+}
+.inline-form label {
+  flex: 1;
+}
+.feedback {
+  padding: 1rem;
+  border-radius: 8px;
+  white-space: pre-line;
+}
+.muted {
+  color: #576c7c;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.2rem 0;
+}
+.metrics div {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  background: #f1f6f9;
+  border-radius: 10px;
+  gap: 0.4rem;
+}
+.metrics strong {
+  font-size: 1.8rem;
+  color: #173e5b;
+}
+.metrics span {
+  font-size: 0.85rem;
+}
+.option-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 1rem 0;
+}
+.option-list label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.7rem;
+}
+.position-rules {
+  padding: 1rem;
+  border-bottom: 1px solid #dbe3e9;
+}
+.requirement-editor {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.6rem 0;
+  align-items: center;
+}
+.requirement-editor label {
+  flex-direction: row;
+  white-space: nowrap;
+}
+.roll-grid {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.roll-grid > div {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.roll-grid label {
+  flex-direction: row;
+  flex: 1;
+}
+.roll-grid input[type='number'] {
+  width: 110px;
+}
+.electoral-card {
+  border: 2px solid #dce5eb;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.electoral-card--selected {
+  border-color: #176889;
+  background: #eef8fb;
+}
+.electoral-card h3 {
+  margin: 0.5rem 0 0;
+}
+.electoral-card p {
+  color: #617383;
+  font-size: 0.85rem;
+  margin: 0.3rem 0;
+}
+.portrait {
+  width: 100%;
+  height: 130px;
+  background: #dae9ee;
+  color: #34576b;
+  border: 0;
+  border-radius: 8px;
+  font-size: 2.2rem;
+  cursor: pointer;
+}
+.portrait-1 {
+  background: #ede4d9;
+  color: #795b40;
+}
+.portrait-2 {
+  background: #e7dfed;
+  color: #69517b;
+}
+.portrait-3 {
+  background: #dce9e0;
+  color: #42634d;
+}
+.portrait-4 {
+  background: #e6e8d8;
+  color: #626c39;
+}
+.portrait img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.text-button {
+  background: none;
+  border: 0;
+  color: #175c7a;
+  text-decoration: underline;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+.panel .ballot-check {
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin-top: auto;
+  padding: 0.5rem;
+}
+.session-clock {
+  font-weight: 700;
+  color: #174866;
+  font-size: 1.2rem;
+}
+.selection-panel {
+  border-color: #97b7c9;
+}
+.process-dialog {
+  max-width: 600px;
+  width: calc(100% - 2rem);
+  border: 0;
+  border-radius: 15px;
+  padding: 1.5rem;
+  color: #183451;
+}
+.process-dialog::backdrop {
+  background: #10233299;
+}
+.dialog-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1rem;
+}
+.dialog-heading h2 {
+  margin-top: 0;
+}
+.pre-wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.campaign-feed {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.campaign-feed .panel {
+  margin: 0;
+}
+.campaign-media {
+  max-width: 100%;
+  max-height: 360px;
+}
+.question {
+  border-top: 1px solid #dde6ed;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  overflow-wrap: anywhere;
+}
+.answer {
+  background: #edf5f7;
+  padding: 0.8rem;
+  border-radius: 8px;
+}
+.result-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr 60px;
+  gap: 1rem;
+  align-items: center;
+  margin: 1rem 0;
+}
+.result-row meter {
+  width: 100%;
+  height: 1.6rem;
+}
+.table-scroll {
+  overflow: auto;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th,
+td {
+  padding: 0.7rem;
+  text-align: left;
+  border-bottom: 1px solid #dbe3e9;
+}
+.tie-notice {
+  background: #fff2cf;
+  padding: 1rem;
+  border-radius: 8px;
+}
+.validation-list {
+  background: #f5f8fa;
+  padding: 1rem;
+  border-radius: 8px;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+@media (max-width: 640px) {
+  .app {
+    padding: 1rem 0.7rem 3rem;
+  }
+  .workspace-header h1 {
+    font-size: 1.7rem;
+  }
+  .workspace-header {
+    align-items: start;
+  }
+  .phase-badge {
+    font-size: 0.65rem;
+    padding: 0.5rem;
+  }
+  .form-grid,
+  .campaign-feed,
+  .option-list {
+    grid-template-columns: 1fr;
+  }
+  .metrics {
+    gap: 0.4rem;
+  }
+  .metrics div {
+    padding: 0.6rem;
+  }
+  .metrics strong {
+    font-size: 1.4rem;
+  }
+  .panel {
+    padding: 1rem;
+  }
+  .requirement-editor {
+    flex-wrap: wrap;
+  }
+  .result-row {
+    grid-template-columns: 1fr 1fr 40px;
+    gap: 0.5rem;
+  }
+  .candidate-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+  .portrait {
+    height: 110px;
+  }
+  .electoral-card {
+    padding: 0.65rem;
+  }
+  .process-nav button {
+    font-size: 0.85rem;
+    padding: 0.7rem;
+  }
+}

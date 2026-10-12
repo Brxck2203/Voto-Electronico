@@ -1,85 +1,168 @@
-import { createContext, useContext, useMemo, useState } from 'react'
-import { InMemoryVotingRepository } from '../infrastructure/InMemoryVotingRepository.js'
-import { Candidato } from '../domain/models.js'
-
-const puestosIniciales = [
-  { id: 'puesto-representacion', nombre: 'Representación general', descripcion: 'Representación de las personas asociadas.', activo: true },
-]
-
-const candidatosIniciales = [
-  new Candidato(1, 'Ana Rodríguez', '', 'Fortalecer la comunicación interna y digitalizar los trámites de la organización.', 'Agrupación Renovación'),
-  new Candidato(2, 'Luis Fernández', '', 'Impulsar beneficios adicionales y transparencia financiera para los agremiados.', 'Agrupación Unidad'),
-  new Candidato(3, 'Mariana Solano', '', 'Mejorar la atención al asociado y modernizar los servicios de la organización.', 'Agrupación Avance'),
-]
-
+import { createContext, useContext, useEffect, useState } from 'react'
+import { ElectoralSystem } from '../domain/ElectoralSystem.js'
+import { createSeed } from './seed.js'
 const VotingContext = createContext(null)
-
 export function VotingProvider({ children }) {
-  const repository = useMemo(() => new InMemoryVotingRepository(candidatosIniciales, puestosIniciales), [])
-  const [votanteId] = useState(() => crypto.randomUUID())
-  const [seleccion, setSeleccion] = useState(null)
-  const [error, setError] = useState(null)
-  const [votoConfirmado, setVotoConfirmado] = useState(false)
-  const [, actualizarVista] = useState(0)
-
-  const refrescarDatos = () => actualizarVista((version) => version + 1)
-
-  const ejecutarAdministracion = (operacion, ...argumentos) => {
-    const resultado = repository[operacion](...argumentos)
-    refrescarDatos()
-    return resultado
-  }
-
-  const seleccionarCandidato = (candidatoId) => {
-    setSeleccion(candidatoId)
-    setError(null)
-  }
-
-  const confirmarVoto = () => {
-    if (seleccion == null) {
-      setError('Debe seleccionar una opción antes de confirmar su voto.')
-      return false
+  const [system] = useState(() => {
+    const s = createSeed()
+    return new ElectoralSystem(s.organizations, s.elections)
+  })
+  const organizations = system.identities()
+  const [context, setContext] = useState({
+    orgId: organizations[0].id,
+    userId: organizations[0].members[0].id,
+  })
+  const [electionId, setElectionId] = useState(
+    () => system.list(context)[0]?.id,
+  )
+  const [, refresh] = useState(0)
+  const [session, setSession] = useState(null)
+  const [selections, setSelections] = useState({})
+  const [notice, setNotice] = useState('')
+  const [error, setError] = useState('')
+  const [clock, setClock] = useState(Date.now())
+  const election = electionId ? system.view(context, electionId) : null
+  const ballots = electionId ? system.ballots(context, electionId) : []
+  useEffect(() => {
+    const t = setInterval(() => setClock(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  useEffect(() => {
+    if (
+      session &&
+      (clock >= session.expires || election?.phase !== 'ABIERTO')
+    ) {
+      setSession(null)
+      setSelections({})
+      setError(
+        'SESION_VENCIDA: puede reingresar si la jornada continúa abierta y aún no emitió.',
+      )
+      setNotice('')
     }
+  }, [clock, session, election?.phase])
+  const clear = () => {
+    setSession(null)
+    setSelections({})
+    setError('')
+    setNotice('')
+  }
+  const changeIdentity = (orgId, userId) => {
+    clear()
+    const ctx = { orgId, userId }
+    setContext(ctx)
+    setElectionId(system.list(ctx)[0]?.id)
+  }
+  const chooseElection = (id) => {
+    clear()
+    setElectionId(id)
+  }
+  const read = (method, ...args) => system[method](context, electionId, ...args)
+  const run = (method, ...args) => {
+    const result = system[method](context, electionId, ...args)
+    refresh((n) => n + 1)
+    return result
+  }
+  const act = (method, ...args) => {
     try {
-      repository.registrarVoto(votanteId, seleccion)
-      setError(null)
-      setVotoConfirmado(true)
-      return true
-    } catch (err) {
-      setError(err.message)
+      const result = run(method, ...args)
+      setError('')
+      setNotice('Cambios aplicados.')
+      return result ?? true
+    } catch (e) {
+      setError(e.message)
+      setNotice('')
       return false
     }
   }
-
+  const begin = () => {
+    try {
+      setSession(run('begin'))
+      setClock(Date.now())
+      setSelections(Object.fromEntries(ballots.map((b) => [b.id, []])))
+      setError('')
+      setNotice('')
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+  const emit = () => {
+    try {
+      const result = run('emit', session?.token, selections)
+      clear()
+      setNotice(result.status)
+      return true
+    } catch (e) {
+      setError(e.message)
+      return false
+    }
+  }
+  const select = (ballotId, optionId) => {
+    const b = ballots.find((b) => b.id === ballotId),
+      current = selections[ballotId] || []
+    if (!session || election.emitted || clock >= session.expires) return
+    const next = current.includes(optionId)
+      ? current.filter((id) => id !== optionId)
+      : b.max === 1
+        ? [optionId]
+        : [...current, optionId]
+    if (next.length > b.max) {
+      setError(`Puede seleccionar como máximo ${b.max} opciones en ${b.name}.`)
+      return
+    }
+    setSelections((s) => ({ ...s, [ballotId]: next }))
+    setError('')
+  }
   const value = {
-    candidatos: repository.obtenerCandidatos(),
-    candidaturas: repository.obtenerCandidaturas(),
-    puestos: repository.obtenerPuestos(),
-    jornadaIniciada: repository.obtenerJornadaIniciada(),
-    seleccion,
-    seleccionarCandidato,
-    confirmarVoto,
+    organizations,
+    context,
+    electionId,
+    election,
+    ballots,
+    session,
+    selections,
+    clock,
+    notice,
     error,
-    votoConfirmado,
-    obtenerResultados: () => repository.obtenerResultados(),
-    crearPuesto: (datos) => ejecutarAdministracion('guardarPuesto', datos),
-    editarPuesto: (id, datos) => ejecutarAdministracion('guardarPuesto', datos, id),
-    eliminarPuesto: (id) => ejecutarAdministracion('eliminarPuesto', id),
-    crearCandidatura: (datos) => ejecutarAdministracion('guardarCandidatura', datos),
-    editarCandidatura: (id, datos) => ejecutarAdministracion('guardarCandidatura', datos, id),
-    actualizarRequisito: (id, requisito, cumplido) => ejecutarAdministracion('actualizarRequisito', id, requisito, cumplido),
-    habilitarCandidatura: (id) => ejecutarAdministracion('habilitarCandidatura', id),
-    retirarCandidatura: (id) => ejecutarAdministracion('retirarCandidatura', id),
-    cambiarJornada: (iniciada) => ejecutarAdministracion('cambiarJornada', iniciada),
+    setError,
+    changeIdentity,
+    chooseElection,
+    elections: system.list(context),
+    read,
+    run,
+    act,
+    begin,
+    emit,
+    select,
+    createElection: (name, purpose) => {
+      try {
+        const id = system.create(context, name, purpose)
+        chooseElection(id)
+        refresh((n) => n + 1)
+        return true
+      } catch (e) {
+        setError(e.message)
+        return false
+      }
+    },
+    // Adaptador para conservar la administración existente.
+    puestos: election?.positions || [],
+    candidaturas: election?.candidates || [],
+    candidatos: ballots.flatMap((b) => b.options),
+    jornadaIniciada: !election?.editable,
+    crearPuesto: (data) => run('position', data),
+    editarPuesto: (id, data) => run('position', data, id),
+    eliminarPuesto: (id) => run('deletePosition', id),
+    crearCandidatura: (data) => run('candidate', data),
+    editarCandidatura: (id, data) => run('candidate', data, id),
+    actualizarRequisito: (id, name, value) =>
+      run('requirement', id, name, value),
+    habilitarCandidatura: (id) => run('enableCandidate', id),
+    retirarCandidatura: (id) => run('withdraw', id),
   }
-
-  return <VotingContext.Provider value={value}>{children}</VotingContext.Provider>
+  return (
+    <VotingContext.Provider value={value}>{children}</VotingContext.Provider>
+  )
 }
-
 export function useVoting() {
-  const context = useContext(VotingContext)
-  if (!context) {
-    throw new Error('useVoting debe usarse dentro de un VotingProvider')
-  }
-  return context
+  return useContext(VotingContext)
 }

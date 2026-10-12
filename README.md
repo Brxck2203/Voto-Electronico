@@ -1,71 +1,50 @@
-# Voto Electrónico – Prototipo Evolutivo
+# Voto Electrónico
 
-Proyecto académico del curso **IC-5821 Requerimientos de Software** (Instituto Tecnológico de Costa Rica, Campus Tecnológico Local San Carlos, II Semestre 2026).
+Prototipo académico en **React + Vite**, con configuración, campaña, votación y resultados. Todos los datos viven en memoria de la pestaña: no utiliza base de datos, backend, `localStorage` ni servicios de autenticación. Recargar reinicia los datos; otras pestañas no comparten la elección.
 
-**Equipo:** Joan Cordero Coto, Jason Martínez Gutiérrez, Brack Rivas Hernández
+## Ejecutar
 
-## Descripción
+Requiere Node.js 22 o posterior.
 
-Plataforma de voto electrónico para organizaciones (asociaciones, sindicatos, solidaristas y colegios profesionales) que cubre el ciclo completo de un proceso de votación. Este repositorio contiene el **prototipo evolutivo funcional** exigido por el Proyecto 2 del curso: se construye en memoria, sin base de datos ni APIs externas, y madura sprint a sprint conforme se refinan los requerimientos con el profesor.
-
-## Stack tecnológico: React + Vite
-
-Se eligió **React** como librería de interfaz porque permite construir una sola aplicación web (SPA) accesible desde cualquier dispositivo (móvil, tablet, escritorio), tal como exige el RF-01 del documento de requerimientos, sin necesidad de desarrollar apps nativas separadas.
-
-**Vite** se usa como herramienta de build porque:
-
-- Levanta un servidor de desarrollo casi instantáneo (usa ESBuild + HMR nativo de módulos ES), ideal para iterar rápido en cada sprint.
-- No requiere configuración compleja de Webpack; el proyecto arranca con un `vite.config.js` mínimo.
-- Empaqueta para producción solo cuando se necesita (`vite build`), manteniendo el prototipo liviano.
-
-El estado del sistema (candidatos, votos, padrón) vive completamente **en memoria** usando el Context API de React (`VotingContext`), respetando la restricción del curso de no conectar bases de datos ni APIs reales.
-
-## Estructura de carpetas
-
-```
-voto-electronico/
-├── index.html
-├── package.json
-├── vite.config.js
-├── .gitignore
-├── ARCHITECTURE.md
-└── src/
-    ├── main.jsx
-    ├── App.jsx
-    ├── domain/
-    │   ├── models.js              # Entidades: Candidato, Eleccion, Voto, errores de dominio
-    │   └── VotingRepository.js    # Interfaz del repositorio (contrato)
-    ├── infrastructure/
-    │   └── InMemoryVotingRepository.js  # Implementación en memoria del repositorio
-    ├── state/
-    │   └── VotingContext.jsx      # Context + estado global de la votación
-    └── components/
-        ├── Ballot/                # Alcance 6 (prioridad 1): papeleta y selección de voto
-        ├── Confirmation/          # Alcance 6: confirmación y registro del voto
-        ├── Election/              # Alcance 2: configuración de la elección
-        └── Admin/                 # Alcance 4: administración de candidaturas
+```bash
+npm ci
+npm run dev
 ```
 
-## Cómo ejecutar el proyecto localmente
+```bash
+npm test
+npm run build
+npm run preview
+```
 
-1. Instalar Node.js 18 o superior.
-2. Instalar dependencias:
-   ```bash
-   npm install
-   ```
-3. Levantar el servidor de desarrollo:
-   ```bash
-   npm run dev
-   ```
-4. Abrir la URL que indica la terminal (por defecto `http://localhost:5173`).
-5. Para generar la versión de producción (opcional para el video demostrativo):
-   ```bash
-   npm run build
-   npm run preview
-   ```
+## Recorrido de demostración
 
-## Estado actual del prototipo (Sprint 1)
+1. En **Configuración**, revise el proceso precargado y pulse **Publicar configuración**. Las fechas iniciales ubican la campaña en el momento actual y la votación al día siguiente.
+2. Abra **Contexto de pruebas · datos en memoria** y seleccione una identidad de candidato. En **Campaña** puede publicar propuestas con texto, JPG/PNG o MP4/WebM. Las identidades del padrón pueden consultar; el candidato autor puede responder.
+3. Regrese a **Tribunal · Coordinación** o **Tribunal · Secretaría**. En **Configuración**, pulse **Abrir ahora** para adelantar el calendario en la demostración. También puede esperar la apertura programada. El padrón se cierra y las reglas quedan bloqueadas.
+4. Seleccione un elector y entre en **Votación → Ingresar a votar**. Marque una opción en Presidencia y otra en Tesorería; revise ambas y confirme. Una sola emisión registra todas las papeletas.
+5. Cambie de elector para repetir las pruebas. Un elector que ya participó no puede emitir nuevamente. Si expira la sesión sin emitir, puede reingresar mientras la jornada siga abierta; las selecciones anteriores se descartan.
+6. El tribunal puede consultar participación sin conteos por candidato y **Cerrar jornada** de forma irreversible. En **Resultados** se muestran conteos, pesos, abstención y empates. El cierre programado produce el mismo cambio de disponibilidad.
 
-Implementado: HU-01 (listar candidaturas) como base inicial del Alcance 6. Las historias HU-02 a HU-07 y los alcances de configuración de elección, administración de candidaturas y escrutinio se documentan en `ARCHITECTURE.md` y se implementarán en los siguientes sprints.
+## Configuración y datos de prueba
 
-Ver la especificación completa de requerimientos, historias de usuario y criterios de aceptación en la carpeta de documentación del proyecto en Google Drive.
+- Dos organizaciones independientes, cada una con dos integrantes de tribunal y diez electores precargados.
+- **Diez candidatos: los tres iniciales más siete adicionales**, distribuidos en cinco por puesto. No hay paginación de papeletas. Nombres, propuestas y afiliaciones están en `src/state/seed.js`.
+- Candidaturas nuevas pendientes, verificación de requisitos obligatorios y opcionales, fotografía JPG/PNG de hasta 5 MB, vista previa, filtros por puesto/estado y retiro.
+- La identidad asignada a una candidatura determina quién puede publicar y responder en su campaña.
+- Calendario de inscripción, campaña, cierre de padrón y votación. Los campos se editan en UTC y muestran su equivalencia en la zona horaria seleccionada.
+- Sesión configurable en segundos; mínimo/máximo de selecciones por puesto; padrón con pesos positivos de hasta tres decimales.
+- Votación por puestos o por grupos completos. Para cambiar modalidad, primero deshabilite las opciones. Cree grupos con un candidato habilitado por puesto y habilítelos antes de publicar.
+- Los cambios previos a apertura devuelven el proceso a borrador. Cada publicación sortea el orden y lo conserva para todas las consultas de esa versión.
+- En ponderación, cada opción seleccionada recibe el peso completo del elector. Si el mínimo es cero, la papeleta puede quedar sin selección: cuenta en participación y no añade puntuación a ninguna opción. En grupos se selecciona exactamente uno.
+- Los empates de mayor puntuación se señalan; el sistema no decide su resolución.
+
+## Alcance del prototipo
+
+El selector de identidades simula actores: **no autentica usuarios**. La unicidad, los permisos y el aislamiento se aplican en el motor durante la misma ejecución. No constituyen controles contra manipulación del navegador ni unicidad entre dispositivos.
+
+La participación y las selecciones se almacenan por separado. Los registros de votos no tienen elector, token ni fecha, y solo se exponen resultados agregados después del cierre. Esto demuestra separación lógica; no garantiza anonimato criptográfico. Los pesos distintivos y las muestras pequeñas pueden permitir inferencias.
+
+Las fechas de inscripción son parte del calendario; el tribunal mantiene las candidaturas y verifica requisitos antes de la apertura. No se incorpora autoinscripción ni autenticación real. Las reglas institucionales para desempate, elegibilidad y asignación de pesos corresponden a la organización.
+
+Consulte [arquitectura](ARCHITECTURE.md) y [trazabilidad de implementación](docs/TRAZABILIDAD.md).
