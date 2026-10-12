@@ -8,4 +8,3 @@ dist-ssr
 *.log
 .vscode/*
 !.vscode/extensions.json
-package-lock.json

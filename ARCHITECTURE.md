@@ -1,38 +1,39 @@
-# Arquitectura de Voto Electrónico
+# Arquitectura
 
-## Capas
+## Componentes
 
-- **`src/domain/`** contiene las entidades electorales, reglas y errores de dominio. `Candidato` conserva los campos que consume la papeleta; `administration.js` define la estructura de las candidaturas, requisitos y errores de validación.
-- **`src/infrastructure/`** implementa `InMemoryVotingRepository`. El repositorio mantiene puestos, candidaturas, jornada y votos en memoria durante la ejecución.
-- **`src/state/`** conecta el repositorio con React mediante `VotingContext`. Tanto Administración como Votación consultan y modifican el mismo repositorio.
-- **`src/components/`** contiene las vistas. `Admin/AdministrationPage.jsx` administra puestos y candidaturas en una ruta separada; `Voting/VotingHomePage.jsx` es el inicio de votación con su menú lateral; `Ballot/BallotPage.jsx` muestra las candidaturas habilitadas devueltas por el estado compartido.
+| Ruta                                             | Responsabilidad                                                                                                           |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `src/domain/ElectoralSystem.js`                  | Estado privado y reglas de procesos, roles, calendario, requisitos, publicación, sesiones, emisión, campaña y resultados. |
+| `src/state/seed.js`                              | Generador de dos organizaciones y diez candidatos por organización, con fechas relativas al inicio.                       |
+| `src/state/VotingContext.jsx`                    | Instancia del motor por montaje, identidad simulada, sesión, selección temporal, reloj y errores de UI.                   |
+| `src/components/Admin/AdministrationPage.jsx`    | Puestos, candidaturas, fotografías, requisitos, filtros y vista previa.                                                   |
+| `src/components/Election/ElectionConfigForm.jsx` | Calendario, reglas, padrón, tribunal, grupos, publicación y cierre.                                                       |
+| `src/components/Election/ProcessPages.jsx`       | Papeletas, confirmación, campaña con consultas y resultados agregados.                                                    |
+| `tests/electoral.test.js`                        | Pruebas del dominio con reloj controlado.                                                                                 |
 
-## Puestos y candidaturas
+Se retiran el repositorio y las vistas anteriores que dependían de un voto individual y de una jornada reversible. La aplicación mantiene un único motor de reglas. La navegación entre secciones conserva el estado en memoria y no requiere rutas de servidor.
 
-Un **Puesto** tiene identificador, nombre, descripción y estado activo. El repositorio exige un nombre no vacío y evita duplicados sin distinguir mayúsculas/minúsculas ni espacios externos.
+## Estado y publicación
 
-Una **Candidatura** conserva identificador, nombre completo (`nombre` como alias compatible con la papeleta), fotografía (`foto` como alias), presentación (`propuesta` como alias), `puestoId`, estado y lista de requisitos. Los requisitos simulados son “Documentación presentada”, “Membresía activa” y “Sin sanciones vigentes”.
+Un proceso pertenece a una organización y tiene estados persistidos `BORRADOR`, `PUBLICADO` o `CERRADO`. Su fase visible se deriva también del reloj: `BORRADOR`, `PROGRAMADO`, `ABIERTO`, `CERRADO`. El intervalo de votación es `[apertura, cierre)`.
 
-Los estados son:
+Toda modificación electoral requiere pertenecer al tribunal y ocurrir antes de la apertura. Modificar devuelve a borrador e invalida el orden anterior; publicar valida la configuración y guarda una permutación por papeleta. La apertura impide cambios incluso si la UI intentara enviarlos. El cierre manual no admite reversión. `start` adelanta apertura y cierre de campaña/padrón para demostrar el flujo; requiere que la campaña ya haya comenzado.
 
-- **Pendiente**: no está disponible en la papeleta.
-- **Habilitado**: todos los requisitos están cumplidos y la candidatura se ofrece para votar.
-- **Retirado**: se mantiene visible en Administración, pero no se puede editar ni votar.
+Las candidaturas transitan entre `Pendiente`, `Habilitado` y `Retirado`. Solo los requisitos obligatorios bloquean la habilitación. Cambiar de puesto o redefinir sus requisitos exige nueva verificación; retirar una candidatura deshabilita los grupos que la utilizan. Eliminar un puesto elimina sus candidaturas. Cada grupo contiene exactamente una candidatura habilitada por puesto.
 
-Una candidatura nueva inicia como Pendiente. Para habilitarla, deben marcarse todos sus requisitos y luego confirmar la acción de habilitación. Si una candidatura habilitada pierde un requisito, vuelve a Pendiente y deja de aparecer en la papeleta. Eliminar un puesto elimina también sus candidaturas asociadas para no dejar referencias a puestos inexistentes.
+## Emisión en memoria
 
-No se impide que una misma persona registre candidaturas diferentes en más de un puesto; la unicidad de una persona entre puestos queda como una regla de negocio futura.
+1. `begin` verifica identidad, organización, proceso publicado, intervalo, padrón cerrado y ausencia de participación anterior.
+2. La sesión se liga al elector, organización y proceso; expira como máximo en el cierre de jornada.
+3. La selección permanece en React hasta confirmar. `emit` vuelve a validar período, sesión, participación y todas las papeletas, incluidos duplicados, opciones y límites.
+4. Se construyen los registros de todas las papeletas y una copia del conjunto de participación antes de sustituir el estado. La operación es síncrona, sin `await`, dentro de una sola instancia JavaScript: un segundo envío encuentra la participación ya registrada.
+5. Se revocan las sesiones de ese elector/proceso. La respuesta no incluye elecciones y la UI elimina selección y confirmación.
 
-## Administración y páginas de votación
+Cada voto contiene `ballotId`, `choices` y `weight`; no guarda identidad, sesión, fecha ni identificador común de emisión. El orden de los registros se mezcla. La participación se guarda en un conjunto independiente de identidades. Las consultas clonan datos para impedir mutaciones externas. El motor no expone votos individuales y oculta padrón y pesos al elector.
 
-La aplicación separa Administración (`/administracion`), el inicio de votación (`/votacion`) y la papeleta (`/votacion/boleta`) mediante navegación cliente, sin añadir dependencias de enrutamiento. Esta navegación mantiene montado el estado global y el repositorio en memoria al cambiar de página. Los cambios efectuados en Administración se reflejan en la papeleta sin recarga. La papeleta filtra candidaturas por estado Habilitado y por asociación a un puesto activo. Cuando hay varios puestos, muestra secciones separadas con sus candidaturas habilitadas; con un puesto mantiene la presentación simple existente.
+## Conteo y límites de simulación
 
-El inicio de votación presenta el estado “Votación activa” únicamente cuando la jornada se activó desde Administración. Desde esa pantalla, el menú lateral permite seleccionar Mis votaciones, Campaña y Resultados; Campaña y Resultados muestran solamente un estado informativo. La papeleta permite volver a Mis votaciones. Tras confirmar, el votante puede volver a consultar las candidaturas, pero se ocultan las acciones de selección y confirmación. El contexto mantiene la bandera de voto confirmado durante la navegación para impedir otro voto desde la interfaz; el repositorio también conserva la protección de voto único.
+`results` rechaza consultas anteriores al cierre. Por opción calcula número de selecciones y puntuación; los pesos se suman en milésimas para evitar errores decimales ordinarios. La abstención es padrón menos participantes. Una papeleta sin selección solo es válida cuando su mínimo es cero. El empate es igualdad positiva de mayor puntuación, sin adjudicación automática.
 
-## Estado de jornada
-
-La jornada comienza como **No iniciada** y puede simularse desde Administración. Al iniciarla se bloquean las operaciones de creación, edición y eliminación de puestos, edición o retiro de candidaturas y cambios de requisitos o estado. El repositorio aplica esta regla además de deshabilitar los controles de la interfaz. El control permite volver a marcar la jornada como no iniciada para fines de simulación.
-
-## Errores de dominio
-
-`PuestoInvalidoError`, `PuestoDuplicadoError`, `CandidaturaInvalidaError`, `OperacionNoPermitidaError` y `CandidatoNoHabilitadoError` representan entradas inválidas, duplicados, operaciones bloqueadas y requisitos pendientes. La interfaz muestra los mensajes al usuario sin ocultar los errores de las reglas de negocio. `VotanteYaVotoError` mantiene la protección de voto único.
+Las comprobaciones de organización están en cada acceso al proceso. Son aislamiento lógico en memoria, no una frontera de seguridad de servidor. Recargar, abrir otra pestaña o modificar la aplicación inicia o altera otra simulación. No se presenta este prototipo como plataforma electoral de producción.
