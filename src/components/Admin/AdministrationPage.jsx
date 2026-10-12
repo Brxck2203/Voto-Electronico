@@ -5,6 +5,7 @@ import { validateImage } from '../../domain/ElectoralSystem.js'
 const estadoClase = {
   Pendiente: 'admin-status--pending',
   Habilitado: 'admin-status--enabled',
+  Rechazado: 'admin-status--withdrawn',
   Retirado: 'admin-status--withdrawn',
 }
 
@@ -50,7 +51,10 @@ export function AdministrationPage() {
     editarCandidatura,
     actualizarRequisito,
     habilitarCandidatura,
+    revisarCandidatura,
+    deshabilitarOpcion,
     retirarCandidatura,
+    election,
   } = useVoting()
   const [puestoDraft, setPuestoDraft] = useState({
     nombre: '',
@@ -61,6 +65,7 @@ export function AdministrationPage() {
     nombreCompleto: '',
     fotografia: '',
     presentacion: '',
+    biografia: '',
     puestoId: '',
     ownerId: '',
     agrupacion: '',
@@ -128,6 +133,7 @@ export function AdministrationPage() {
       nombreCompleto: '',
       fotografia: '',
       presentacion: '',
+      biografia: '',
       puestoId: '',
       ownerId: '',
       agrupacion: '',
@@ -143,6 +149,7 @@ export function AdministrationPage() {
       nombreCompleto: candidatura.nombreCompleto,
       fotografia: candidatura.fotografia,
       presentacion: candidatura.presentacion,
+      biografia: candidatura.biografia || '',
       puestoId: candidatura.puestoId,
       ownerId: candidatura.ownerId,
       agrupacion: candidatura.agrupacion,
@@ -211,6 +218,16 @@ export function AdministrationPage() {
   const habilitar = (candidatura) => {
     const ok = informarError(() => habilitarCandidatura(candidatura.id))
     if (ok) setExito('Candidatura habilitada.')
+  }
+
+  const revisar = (candidatura, decision) => {
+    const ok = informarError(() => revisarCandidatura(candidatura.id, decision))
+    if (ok) setExito(`Verificación registrada: ${decision.toLowerCase()}.`)
+  }
+
+  const deshabilitar = (candidatura) => {
+    const ok = informarError(() => deshabilitarOpcion(candidatura.id))
+    if (ok) setExito('Candidatura retirada de la papeleta sin borrar su registro.')
   }
 
   return (
@@ -373,6 +390,10 @@ export function AdministrationPage() {
           }}
         >
           <label>
+            Elección asociada
+            <input value={election.name} readOnly disabled />
+          </label>
+          <label>
             Nombre completo
             <input
               value={candidatoDraft.nombreCompleto}
@@ -464,6 +485,18 @@ export function AdministrationPage() {
             )}
           </label>
           <label>
+            Biografía
+            <textarea
+              rows="3"
+              value={candidatoDraft.biografia}
+              onChange={(event) =>
+                setCandidatoDraft({ ...candidatoDraft, biografia: event.target.value })
+              }
+              disabled={jornadaIniciada || !puestos.length}
+              placeholder="Información biográfica proporcionada por la candidatura"
+            />
+          </label>
+          <label>
             Presentación o propuesta
             <textarea
               rows="4"
@@ -551,7 +584,7 @@ export function AdministrationPage() {
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value)}
             >
-              {['todos', 'Pendiente', 'Habilitado', 'Retirado'].map((s) => (
+              {['todos', 'Pendiente', 'Habilitado', 'Rechazado', 'Retirado'].map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
@@ -643,6 +676,13 @@ export function AdministrationPage() {
                 {candidatura.estado !== 'Retirado' && (
                   <div className="requirements-panel">
                     <strong>Verificación de requisitos</strong>
+                    <p>
+                      <strong>Estado de revisión:</strong>{' '}
+                      {candidatura.verificacion || 'Pendiente'}
+                      {' · '}
+                      {candidatura.requisitos.filter((r) => r.cumplido).length}
+                      /{candidatura.requisitos.length} requisitos cumplidos
+                    </p>
                     {candidatura.requisitos.map((requisito) => (
                       <label
                         key={requisito.nombre}
@@ -664,14 +704,58 @@ export function AdministrationPage() {
                         {requisito.obligatorio ? 'obligatorio' : 'opcional'})
                       </label>
                     ))}
-                    {candidatura.estado === 'Pendiente' && (
+                    {candidatura.requisitos.some((r) => r.obligatorio && !r.cumplido) && (
+                      <p className="field-error">
+                        No habilitable: faltan requisitos obligatorios.
+                      </p>
+                    )}
+                    {!jornadaIniciada && (
+                      <div className="admin-card-actions">
+                        <button
+                          type="button"
+                          className="btn btn--secondary"
+                          onClick={() => revisar(candidatura, 'Aprobado')}
+                          disabled={candidatura.requisitos.some((r) => r.obligatorio && !r.cumplido)}
+                        >
+                          Aprobar revisión
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--secondary"
+                          onClick={() => revisar(candidatura, 'Rechazado')}
+                        >
+                          Rechazar revisión
+                        </button>
+                        {candidatura.verificacion !== 'Pendiente' && (
+                          <button
+                            type="button"
+                            className="btn btn--secondary"
+                            onClick={() => revisar(candidatura, 'Pendiente')}
+                          >
+                            Marcar pendiente
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {candidatura.verificacion === 'Aprobado' &&
+                     candidatura.estado === 'Habilitado' && !candidatura.enabled && (
                       <button
                         type="button"
                         className="btn btn--primary"
                         onClick={() => habilitar(candidatura)}
+                        disabled={jornadaIniciada || election.mode !== 'POR_PUESTOS'}
+                      >
+                        {election.mode === 'POR_PUESTOS' ? 'Incluir en papeleta' : 'Habilitar desde grupos'}
+                      </button>
+                    )}
+                    {candidatura.enabled && (
+                      <button
+                        type="button"
+                        className="btn btn--secondary"
+                        onClick={() => deshabilitar(candidatura)}
                         disabled={jornadaIniciada}
                       >
-                        Habilitar candidatura
+                        Quitar de papeleta
                       </button>
                     )}
                   </div>
@@ -732,6 +816,7 @@ export function AdministrationPage() {
           />
           <section className="detail-requirements">
             <h3>Requisitos</h3>
+            <p>Verificación: {candidatoDetalle.verificacion || 'Pendiente'}</p>
             {candidatoDetalle.requisitos.map((requisito) => (
               <p key={requisito.nombre}>
                 {requisito.cumplido ? '✓ Cumplido' : '○ Pendiente'} —{' '}
@@ -805,6 +890,7 @@ function CandidateSummary({ draft, puesto, estado }) {
           </span>
         </p>
         <p>{presentacion}</p>
+        {draft.biografia && <p><strong>Biografía:</strong> {draft.biografia}</p>}
       </div>
     </div>
   )

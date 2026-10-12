@@ -37,6 +37,7 @@ export function createSeed(now = Date.now()) {
           id: `o${index}-admin2`,
           name: 'Tribunal · Secretaría',
           canAdmin: true,
+          canAudit: true,
         },
         ...names.map((name, n) => ({
           id: `o${index}-elector${n + 1}`,
@@ -80,8 +81,10 @@ export function createSeed(now = Date.now()) {
       agrupacion: ['Renovación', 'Unidad', 'Avance', 'Encuentro', 'Futuro'][
         n % 5
       ],
+      biografia: '', // Información no proporcionada: no inventar trayectorias de candidatos.
       puestoId: positions[n < 5 ? 0 : 1].id,
       estado: 'Habilitado',
+      verificacion: 'Aprobado',
       enabled: true,
       requisitos: positions[n < 5 ? 0 : 1].requirements.map((r) => ({
         ...r,

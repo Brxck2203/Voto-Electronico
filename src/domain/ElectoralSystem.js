@@ -62,7 +62,8 @@ export class ElectoralSystem {
   }
   #editable(ctx, e) {
     this.#admin(ctx, e)
-    if (e.status === 'CERRADO' || this.#now() >= e.calendar.open)
+    if (e.status === 'CERRADO' ||
+      (Number.isFinite(e.calendar?.open) && this.#now() >= e.calendar.open))
       fail('CONFIGURACION_BLOQUEADA: la apertura ya fue alcanzada.')
   }
   #changed(e) {
@@ -110,14 +111,27 @@ export class ElectoralSystem {
       emitted: participation.has(ctx.userId),
       participationCount: admin ? participation.size : undefined,
       eligibleCount: admin ? e.roll.length : undefined,
+      // Los valores precargados en un borrador nuevo son ayudas de edición,
+      // no parámetros aprobados. La vista explicita lo que falta por confirmar.
+      configPending: admin ? this.#pending(e) : undefined,
       editable:
-        admin && this.#now() < e.calendar.open && e.status !== 'CERRADO',
+        admin && (e.calendar?.open == null || this.#now() < e.calendar.open) && e.status !== 'CERRADO',
     }
+  }
+  #pending(e) {
+    const pending = []
+    if (e.configured === false) pending.push('Modalidad, calendario, duración de sesión y ponderación sin guardar')
+    if (!e.positions.length) pending.push('Puestos por elegir')
+    if (!e.roll.length) pending.push('Padrón electoral vacío')
+    if (!e.admins.length) pending.push('Tribunal electoral sin integrantes')
+    if (!this.#ballots(e).length || this.#ballots(e).some(b => !b.options.length))
+      pending.push('Papeletas sin opciones habilitadas')
+    return pending
   }
   create(ctx, name, purpose) {
     if (!this.#member(ctx).canAdmin)
       fail('ACCESO_DENEGADO: solo administradores pueden crear procesos.')
-    if (!name.trim() || !purpose.trim())
+    if (typeof name !== 'string' || !name.trim() || typeof purpose !== 'string' || !purpose.trim())
       fail('Nombre y propósito son obligatorios.')
     const now = this.#now(),
       day = 86400000
@@ -127,6 +141,7 @@ export class ElectoralSystem {
       name: name.trim(),
       purpose: purpose.trim(),
       status: 'BORRADOR',
+      configured: false, // Valores iniciales sugeridos, no confirmados (HU-40/41).
       mode: 'POR_PUESTOS',
       sessionSeconds: 180,
       weighting: 'IGUALITARIO',
@@ -168,7 +183,8 @@ export class ElectoralSystem {
     if (Object.keys(changes).some((k) => !allowed.includes(k)))
       fail('Parámetro de configuración no permitido.')
     const next = { ...copy(e), ...copy(changes) }
-    if (!next.name.trim() || !next.purpose.trim())
+    if (typeof next.name !== 'string' || !next.name.trim() ||
+      typeof next.purpose !== 'string' || !next.purpose.trim())
       fail('Nombre y propósito son obligatorios.')
     if (!['POR_PUESTOS', 'POR_GRUPOS'].includes(next.mode))
       fail('Modalidad inválida.')
@@ -189,6 +205,8 @@ export class ElectoralSystem {
     )
       fail('El cierre del padrón ya ocurrió y no puede trasladarse.')
     Object.assign(e, copy(changes))
+    if (['mode', 'calendar', 'sessionSeconds', 'weighting'].every(k => Object.hasOwn(changes, k)))
+      e.configured = true
     this.#changed(e)
   }
   #validateCalendar(c) {
@@ -214,6 +232,8 @@ export class ElectoralSystem {
       fail(
         'Calendario inválido: inscripción → campaña → votación; cierre del padrón anterior a apertura.',
       )
+    if (typeof c.timezone !== 'string' || !c.timezone.trim())
+      fail('Zona horaria obligatoria.')
     try {
       new Intl.DateTimeFormat('es', { timeZone: c.timezone }).format()
     } catch {
@@ -259,8 +279,13 @@ export class ElectoralSystem {
     this.#editable(ctx, e)
     if (!e.positions.some((p) => p.id === positionId))
       fail('Puesto inexistente.')
+    const removedCandidateIds = new Set(
+      e.candidates.filter((c) => c.puestoId === positionId).map((c) => c.id),
+    )
     e.positions = e.positions.filter((p) => p.id !== positionId)
     e.candidates = e.candidates.filter((c) => c.puestoId !== positionId)
+    // Las publicaciones de una candidatura eliminada tampoco deben quedar huérfanas.
+    e.posts = e.posts.filter((post) => !removedCandidateIds.has(post.candidateId))
     e.groups.forEach((g) => {
       g.enabled = false
       g.members = g.members.filter((m) => m.positionId !== positionId)
@@ -307,16 +332,19 @@ export class ElectoralSystem {
         .size !== requirements.length
     )
       fail('No repita nombres de requisitos.')
-    p.requirements = requirements.map((r) => ({
-      id: uid(),
-      nombre: r.nombre.trim(),
-      obligatorio: r.obligatorio,
+    const normalized = requirements.map((r) => ({
+      nombre: r.nombre.trim(), obligatorio: r.obligatorio,
     }))
+    if (normalized.length === p.requirements.length &&
+        normalized.every((r, index) => r.nombre === p.requirements[index].nombre &&
+          r.obligatorio === p.requirements[index].obligatorio)) return
+    p.requirements = normalized.map((r) => ({ ...r, id: uid() }))
     e.candidates
       .filter((c) => c.puestoId === p.id && c.estado !== 'Retirado')
       .forEach((c) => {
         c.requisitos = p.requirements.map((r) => ({ ...r, cumplido: false }))
         c.estado = 'Pendiente'
+        c.verificacion = 'Pendiente'
         c.enabled = false
       })
     e.groups.forEach((g) => {
@@ -330,6 +358,8 @@ export class ElectoralSystem {
     const p = e.positions.find((p) => p.id === data.puestoId)
     if (!data.nombreCompleto?.trim() || !data.presentacion?.trim() || !p)
       fail('Nombre, propuesta y puesto existente son obligatorios.')
+    if (data.biografia != null && typeof data.biografia !== 'string')
+      fail('La biografía debe ser un texto.')
     if (
       data.fotografia &&
       !/^data:image\/(png|jpeg);base64,/.test(data.fotografia)
@@ -348,11 +378,17 @@ export class ElectoralSystem {
     )
       fail('Seleccione la identidad del candidato en esta organización.')
     if (!c) {
-      c = { id: uid(), estado: 'Pendiente', enabled: false }
+      c = {
+        id: uid(),
+        estado: 'Pendiente',
+        verificacion: 'Pendiente',
+        enabled: false,
+      }
       e.candidates.push(c)
     }
-    if (c.puestoId !== p.id) {
+    if (c.puestoId !== p.id || (c.ownerId && c.ownerId !== ownerId)) {
       c.estado = 'Pendiente'
+      c.verificacion = 'Pendiente'
       c.enabled = false
       c.requisitos = p.requirements.map((r) => ({ ...r, cumplido: false }))
     }
@@ -364,6 +400,7 @@ export class ElectoralSystem {
       foto: data.fotografia || '',
       presentacion: data.presentacion.trim(),
       propuesta: data.presentacion.trim(),
+      biografia: (data.biografia ?? c.biografia ?? '').trim(),
       puestoId: p.id,
       agrupacion: data.agrupacion?.trim() || c.agrupacion || 'Independiente',
     })
@@ -380,13 +417,35 @@ export class ElectoralSystem {
       ),
       r = c?.requisitos.find((r) => r.nombre === name)
     if (!r) fail('Requisito inexistente.')
-    r.cumplido = Boolean(value)
-    if (c.requisitos.some((r) => r.obligatorio && !r.cumplido)) {
-      c.estado = 'Pendiente'
-      c.enabled = false
-      e.groups.forEach((g) => {
-        if (g.members.some((m) => m.candidateId === c.id)) g.enabled = false
-      })
+    if (typeof value !== 'boolean') fail('Indique verdadero o falso para el requisito.')
+    if (r.cumplido === value) return
+    r.cumplido = value
+    // Cualquier cambio a lo ya revisado requiere una nueva decisión explícita.
+    c.verificacion = 'Pendiente'
+    c.estado = 'Pendiente'
+    c.enabled = false
+    e.groups.forEach((g) => {
+      if (g.members.some((m) => m.candidateId === c.id)) g.enabled = false
+    })
+    this.#changed(e)
+  }
+  // HU-12 y HU-13: evaluar es distinto de habilitar una opción en la papeleta.
+  reviewCandidate(ctx, id, candidateId, decision) {
+    const e = this.#election(ctx, id)
+    this.#editable(ctx, e)
+    if (!['Aprobado', 'Rechazado', 'Pendiente'].includes(decision))
+      fail('Estado de verificación inválido.')
+    const c = e.candidates.find((c) => c.id === candidateId && c.estado !== 'Retirado')
+    if (!c) fail('Candidatura inexistente o retirada.')
+    if (
+      decision === 'Aprobado' &&
+      (!c.requisitos.length || c.requisitos.some((r) => r.obligatorio && !r.cumplido))
+    ) fail('La candidatura tiene requisitos obligatorios pendientes.')
+    c.verificacion = decision
+    c.estado = decision === 'Aprobado' ? 'Habilitado' : decision
+    c.enabled = false
+    for (const g of e.groups) {
+      if (g.members.some((m) => m.candidateId === c.id)) g.enabled = false
     }
     this.#changed(e)
   }
@@ -398,11 +457,11 @@ export class ElectoralSystem {
     )
     if (
       !c ||
-      !c.requisitos.length ||
+      c.verificacion !== 'Aprobado' ||
+      c.estado !== 'Habilitado' ||
       c.requisitos.some((r) => r.obligatorio && !r.cumplido)
     )
-      fail('La candidatura tiene requisitos obligatorios pendientes.')
-    c.estado = 'Habilitado'
+      fail('La candidatura debe ser aprobada y cumplir sus requisitos antes de habilitarse.')
     c.enabled = e.mode === 'POR_PUESTOS'
     this.#changed(e)
   }
@@ -412,6 +471,7 @@ export class ElectoralSystem {
     const c = e.candidates.find((c) => c.id === candidateId)
     if (!c) fail('Candidatura inexistente.')
     c.estado = 'Retirado'
+    c.verificacion = 'Retirado'
     c.enabled = false
     e.groups.forEach((g) => {
       if (g.members.some((m) => m.candidateId === c.id)) g.enabled = false
@@ -425,7 +485,8 @@ export class ElectoralSystem {
       (o) => o.id === optionId,
     )
     if (!o) fail('Opción inexistente.')
-    if (enabled && e.mode === 'POR_PUESTOS' && o.estado !== 'Habilitado')
+    if (enabled && e.mode === 'POR_PUESTOS' &&
+      (o.estado !== 'Habilitado' || o.verificacion !== 'Aprobado'))
       fail('Candidatura no habilitada.')
     if (enabled && e.mode === 'POR_GRUPOS') this.#validateGroup(e, o)
     o.enabled = Boolean(enabled)
@@ -460,7 +521,7 @@ export class ElectoralSystem {
           (c) =>
             c.id === m?.candidateId &&
             c.puestoId === p.id &&
-            c.estado === 'Habilitado',
+            c.estado === 'Habilitado' && c.verificacion === 'Aprobado',
         )
       )
         fail('El grupo contiene una candidatura inválida o no habilitada.')
@@ -547,6 +608,13 @@ export class ElectoralSystem {
     const e = this.#election(ctx, id)
     this.#admin(ctx, e)
     const errors = []
+    if (e.configured === false)
+      errors.push('Configuración PENDIENTE: guarde modalidad, calendario, duración y ponderación.')
+    if (!['POR_PUESTOS', 'POR_GRUPOS'].includes(e.mode)) errors.push('Modalidad inválida.')
+    if (!Number.isInteger(e.sessionSeconds) || e.sessionSeconds <= 0)
+      errors.push('Duración de sesión inválida.')
+    if (!['IGUALITARIO', 'PONDERADO'].includes(e.weighting))
+      errors.push('Ponderación no definida.')
     try {
       this.#validateCalendar(e.calendar)
     } catch (err) {
@@ -557,7 +625,10 @@ export class ElectoralSystem {
     if (!e.roll.length) errors.push('El padrón está vacío.')
     if (!e.positions.length) errors.push('Faltan puestos.')
     if (!e.admins.length) errors.push('Falta tribunal.')
-    if (e.weighting === 'PONDERADO' && e.roll.some((r) => !positive(r.weight)))
+    if (e.positions.some(p => !Array.isArray(p.requirements) || !p.requirements.length))
+      errors.push('Faltan requisitos de inscripción de algún puesto.')
+    if (e.weighting === 'PONDERADO' && e.roll.some((r) => !positive(r.weight) ||
+      !Number.isSafeInteger(Math.round(Number(r.weight) * 1000))))
       errors.push('Hay pesos inválidos.')
     for (const b of this.#ballots(e))
       if (
@@ -644,6 +715,11 @@ export class ElectoralSystem {
         s.expires > this.#now(),
     )
     if (existing) return { token: existing[0], expires: existing[1].expires }
+    // El vencimiento anterior nunca otorga participación ni conserva selecciones.
+    for (const [oldToken, oldSession] of this.#sessions)
+      if (oldSession.electionId === id && oldSession.orgId === ctx.orgId &&
+          oldSession.userId === ctx.userId && oldSession.expires <= this.#now())
+        this.#sessions.delete(oldToken)
     const token = uid(),
       expires = Math.min(
         this.#now() + e.sessionSeconds * 1000,
@@ -673,7 +749,7 @@ export class ElectoralSystem {
       fail('NO_HABILITADO: padrón no válido.')
     const ballots = this.#ballots(e)
     if (
-      !selections ||
+      !selections || typeof selections !== 'object' || Array.isArray(selections) ||
       Object.keys(selections).length !== ballots.length ||
       ballots.some((b) => !Object.hasOwn(selections, b.id))
     )
@@ -705,6 +781,58 @@ export class ElectoralSystem {
       if (s.electionId === id && s.userId === ctx.userId)
         this.#sessions.delete(key)
     return { status: 'VOTO_REGISTRADO', electionId: id }
+  }
+  // HU-44/45: mismo orden publicado para todo elector, sin duplicados u omisiones.
+  verifyOrder(ctx, id) {
+    const e = this.#election(ctx, id)
+    this.#admin(ctx, e)
+    if (e.status !== 'PUBLICADO' && e.status !== 'CERRADO')
+      fail('Publique la elección antes de verificar el orden sorteado.')
+    const ballots = this.#ballots(e)
+    return {
+      version: e.version,
+      valid: Object.keys(e.order).length === ballots.length && ballots.every(b =>
+        Array.isArray(e.order[b.id]) && e.order[b.id].length === b.options.length &&
+        new Set(e.order[b.id]).size === b.options.length &&
+        e.order[b.id].every(optionId => b.options.some(o => o.id === optionId))),
+      ballots: ballots.map(b => ({
+        id: b.id, name: b.name, count: b.options.length,
+        order: [...(e.order[b.id] || [])],
+      })),
+    }
+  }
+  // HU-64: estado por elector, nunca devuelve voto, selección, peso ni identificador de papeleta.
+  participationStatus(ctx, id) {
+    const e = this.#election(ctx, id)
+    this.#admin(ctx, e)
+    const org = this.#organizations.find(o => o.id === e.orgId)
+    return e.roll.map(r => ({
+      electorId: r.userId,
+      name: org.members.find(m => m.id === r.userId)?.name || 'Elector',
+      status: e.participation.has(r.userId) ? 'EMITIDO' : 'NO_EMITIDO',
+    }))
+  }
+  // HU-65: inspección autorizada únicamente de ESTRUCTURA, sin volcar papeletas.
+  auditStructure(ctx, id) {
+    const e = this.#election(ctx, id)
+    const member = this.#member(ctx)
+    if (!e.admins.includes(member.id) && !member.canAudit)
+      fail('ACCESO_DENEGADO: auditoría no autorizada.')
+    return {
+      participationFields: ['organizacion', 'proceso', 'elector', 'estado'],
+      ballotFields: ['proceso', 'opciones', 'peso'],
+      sharedIndividualIdentifier: false,
+      ballotsContainIdentity: false,
+      individualVotesExposed: false,
+      caveat: 'Inspección del prototipo en memoria; ponderaciones únicas pueden comprometer el anonimato.',
+    }
+  }
+  // HU-69: monitoreo agregado; nunca incluye clasificación o recuentos por opción.
+  monitor(ctx, id) {
+    const e = this.#election(ctx, id)
+    this.#admin(ctx, e)
+    return { eligible: e.roll.length, emitted: e.participation.size,
+      pending: e.roll.length - e.participation.size }
   }
   results(ctx, id) {
     const e = this.#election(ctx, id)
