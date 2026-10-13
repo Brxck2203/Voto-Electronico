@@ -93,3 +93,5 @@
 - Los archivos `src/App.css`, `src/App.jsx`, `src/main.jsx` e `index.html` permanecen sin modificaciones respecto de la Iteración 1.
 - `npm ci --offline` no pudo ejecutarse completamente por paquete no disponible en caché (`yallist@3.1.1`); sin dependencias no fue posible ejecutar `npm run build` ni realizar pruebas visuales completas en navegador.
 - Deben ejecutarse adicionalmente escenarios manuales enumerados en `PRUEBAS_MANUALES.md`.
+
+**Actualización:** matriz histórica de 69 historias. La nueva versión JSON conserva el motor original y ofrece flujos principales para administración, votación y resultados; no acredita que las 85 historias estén integradas o aceptadas en este backend local. Consulta `ESTADO_PROTOTIPO_JSON.md`.

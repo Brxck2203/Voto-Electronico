@@ -1,3 +1,4 @@
+import { downloadOfficialPdf } from '../../utils/officialPdf.js'
 import { useEffect, useRef, useState } from 'react'
 import { useVoting } from '../../state/VotingContext.jsx'
 function Dialog({ title, children, close }) {
@@ -435,6 +436,14 @@ export function ResultsPage() {
             ? 'Conteo ponderado: cada selección recibe el peso electoral completo.'
             : 'Conteo igualitario: cada selección tiene peso 1.'}
         </p>
+        <div className="result-actions">
+          <button className="btn btn--primary" onClick={() => downloadOfficialPdf(result)}>
+            Descargar acta oficial (PDF)
+          </button>
+          <span className="audit-status" role="status">
+            {result.reconciliation.valid ? 'Conciliación correcta' : `Alerta de conciliación: ${result.reconciliation.alerts.join(' ')}`}
+          </span>
+        </div>
         <button
           className="btn btn--secondary"
           onClick={() => setDetail(!detail)}
@@ -465,7 +474,7 @@ export function ResultsPage() {
                 max={Math.max(1, ...b.rows.map((r) => r.weight))}
                 value={r.weight}
               />
-              <strong>{r.weight}</strong>
+              <strong>{r.weight} · {r.percentage}%</strong>
             </div>
           ))}
           {detail && (

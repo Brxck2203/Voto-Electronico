@@ -37,6 +37,7 @@ export class ElectoralSystem {
       votes: [],
       order: {},
       version: 0,
+      officialAct: null,
     }))
     this.#now = now
   }
@@ -80,6 +81,8 @@ export class ElectoralSystem {
       fail('FUERA_DE_PERIODO: la votación no está abierta.')
   }
   phase(e) {
+    if (e.status === 'CERRADO' || (e.status === 'PUBLICADO' && this.#now() >= e.calendar?.close))
+      this.#finalize(e)
     if (
       e.status === 'CERRADO' ||
       (e.status === 'PUBLICADO' && this.#now() >= e.calendar.close)
@@ -165,6 +168,7 @@ export class ElectoralSystem {
       votes: [],
       order: {},
       version: 0,
+      officialAct: null,
     }
     this.#elections.push(e)
     return e.id
@@ -680,6 +684,7 @@ export class ElectoralSystem {
       fail('Solo se puede cerrar una jornada abierta.')
     e.calendar.close = this.#now()
     e.status = 'CERRADO'
+    this.#finalize(e)
     e.version++
     for (const [token, s] of this.#sessions)
       if (s.electionId === id) this.#sessions.delete(token)
@@ -834,41 +839,57 @@ export class ElectoralSystem {
     return { eligible: e.roll.length, emitted: e.participation.size,
       pending: e.roll.length - e.participation.size }
   }
+  // HU-70..83: el acta se calcula una vez y no conserva identidad o sesiones.
+  #finalize(e) {
+    if (e.officialAct) return
+    const ballots = this.#ballots(e).map((b) => {
+      const paperVotes = e.votes.filter((v) => v.ballotId === b.id)
+      const rows = b.options.map((o) => {
+        const matching = paperVotes.filter(v => v.choices.includes(o.id))
+        return {
+          id: o.id, name: o.nombre, votes: matching.length,
+          weight: matching.reduce((sum, v) => sum + Math.round(v.weight * 1000), 0) / 1000,
+        }
+      }).sort((a, b) => b.weight - a.weight || a.name.localeCompare(b.name, 'es'))
+      const maximum = Math.max(0, ...rows.map(r => r.weight))
+      const leaders = maximum > 0 ? rows.filter(r => r.weight === maximum).map(r => r.name) : []
+      const totalWeight = rows.reduce((sum, r) => sum + r.weight, 0)
+      return {
+        id: b.id, name: b.name,
+        rows: rows.map(r => ({ ...r, percentage: totalWeight ? Math.round(10000 * r.weight / totalWeight) / 100 : 0 })),
+        totalVotes: paperVotes.length, blank: paperVotes.filter(v => !v.choices.length).length,
+        tie: leaders.length > 1, leaders,
+      }
+    })
+    const eligible = e.roll.length
+    const participation = e.participation.size
+    const mismatches = ballots.filter(b => b.totalVotes !== participation)
+      .map(b => `Conciliación: ${b.name}: ${b.totalVotes} papeletas frente a ${participation} electores EMITIDO.`)
+    // Aun cuando exista una discrepancia, las papeletas recuperadas sí se escrutan.
+    e.officialAct = {
+      name: e.name, electionId: e.id, status: 'FINALIZADO',
+      eligible, participation, abstentions: eligible - participation,
+      participationPercentage: eligible ? Math.round(10000 * participation / eligible) / 100 : 0,
+      abstentionPercentage: eligible ? Math.round(10000 * (eligible - participation) / eligible) / 100 : 0,
+      weighting: e.weighting, ballots,
+      reconciliation: { valid: !mismatches.length, alerts: mismatches },
+      totalBlank: ballots.reduce((n, b) => n + b.blank, 0),
+      generatedAt: this.#now(),
+    }
+  }
   results(ctx, id) {
     const e = this.#election(ctx, id)
     if (this.phase(e) !== 'CERRADO')
       fail('RESULTADOS_NO_DISPONIBLES: espere al cierre electoral.')
-    const ballots = this.#ballots(e).map((b) => {
-      const votes = e.votes.filter((v) => v.ballotId === b.id)
-      const rows = b.options.map((o) => ({
-        id: o.id,
-        name: o.nombre,
-        votes: votes.filter((v) => v.choices.includes(o.id)).length,
-        weight:
-          votes
-            .filter((v) => v.choices.includes(o.id))
-            .reduce((n, v) => n + Math.round(v.weight * 1000), 0) / 1000,
-      }))
-      const max = Math.max(0, ...rows.map((r) => r.weight)),
-        leaders =
-          max > 0 ? rows.filter((r) => r.weight === max).map((r) => r.name) : []
-      return {
-        id: b.id,
-        name: b.name,
-        rows,
-        blank: votes.filter((v) => !v.choices.length).length,
-        tie: leaders.length > 1,
-        leaders,
-      }
-    })
-    return {
-      name: e.name,
-      eligible: e.roll.length,
-      participation: e.participation.size,
-      abstentions: e.roll.length - e.participation.size,
-      weighting: e.weighting,
-      ballots,
-    }
+    return copy(e.officialAct)
+  }
+  officialAct(ctx, id) {
+    return this.results(ctx, id)
+  }
+  // No hay operaciones para alterar votos o actas una vez emitidos.
+  alterOfficialAct(ctx, id) {
+    this.#election(ctx, id)
+    fail('ACTA_INMUTABLE: no se permite modificar o eliminar resultados oficiales.')
   }
   #campaign(ctx, id) {
     const e = this.#election(ctx, id)

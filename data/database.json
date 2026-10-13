@@ -1,0 +1,300 @@
+{
+  "version": 1,
+  "organizations": [
+    {
+      "id": "asociacion-horizonte-demo",
+      "name": "Asociación Horizonte"
+    }
+  ],
+  "admins": [
+    {
+      "id": "admin1",
+      "email": "tribunal@demo.local",
+      "name": "Tribunal · Coordinación",
+      "orgId": "asociacion-horizonte-demo",
+      "passwordHash": "8e36ffff508e73e2fe695cde4c8a8a05:cc37639e8afab452b45b65393fc0a071f05ac771cdd683943330a53a61aaf7a5"
+    }
+  ],
+  "electors": [
+    {
+      "id": "elector-1",
+      "name": "Elena Vargas",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "879ba552a1d21f0ebb112803541718f8d2aca147f4f20189dc511c930f659df9",
+      "codeHash": "de70f284d115969a403373f9d591debf016e0ec315b3712514b721f7eb3f6df1"
+    },
+    {
+      "id": "elector-2",
+      "name": "Juan Rivera",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "e36a357276463984ea71b6817d75eec04d06eb0d8c35b8f612edacced5b28757",
+      "codeHash": "c18433ac4a7e3e5a7e3b45c3a6b95a65eb700a2f89f417d5899a08b83bff9aa7"
+    },
+    {
+      "id": "elector-3",
+      "name": "Alejandra Pérez",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "ae7454d78baac0579d2d4903667d65090c33b264406f696c56797022d179d0a2",
+      "codeHash": "100b704d2526e1532256c3769e544196c01ab0d8c9e09a02a003f32daf4d0f68"
+    },
+    {
+      "id": "elector-4",
+      "name": "Laura Jiménez",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "1128cde26c6d06ff772483c0a2acdb04f8e38aa8798edf11e72dafc52b9b4556",
+      "codeHash": "fe04626e2f8371227428fb89e075fec94274ea00e1e2d1202942c9ff1ada5caf"
+    },
+    {
+      "id": "elector-5",
+      "name": "Miguel Torres",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "ad3e1185872acfada86e5239f65852495b75c77e8486eb0946a81794dc3708e1",
+      "codeHash": "0cd2af87f5fe0588d9649bbb487c2de8b4ed76ba451e95b67e6e21da94e8ab7d"
+    },
+    {
+      "id": "elector-6",
+      "name": "Paola Castro",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "07b34b78534feb5ca98ce06610dbebe83ecf0143d57b677cb5c0f39f3f663709",
+      "codeHash": "c8e67ba2e9eb71881b9e283f3b702be333e345653954fabfbf08e93059ec6fa8"
+    },
+    {
+      "id": "elector-7",
+      "name": "Andrés Morales",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "83232693143f341341a90a07c44a072df50797933966b245faf3d989769264ae",
+      "codeHash": "b07d683ea9426ab1d6f6f8ba6b5d77796080432c63b8ac214715b1fac97d15a9"
+    },
+    {
+      "id": "elector-8",
+      "name": "Daniela Solís",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "d81ff10d4fd561f14b2941dd1e75896706b6fdce717aca9afd18fdca7df9bd4d",
+      "codeHash": "d7873ef0915384bad5384ca92d54566ef53891e824c9c4bd5d4be010d1087995"
+    },
+    {
+      "id": "elector-9",
+      "name": "Ricardo Chaves",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "0968f1babe156fa42b26d6c200505544525513198cfcbf1cbc1b6cf163940459",
+      "codeHash": "42a89634181473fed3c0257bb03fbe5bd34672bfbf3eef53654f77850b7d85d6"
+    },
+    {
+      "id": "elector-10",
+      "name": "Valeria Soto",
+      "orgId": "asociacion-horizonte-demo",
+      "cedulaHash": "13055402ad0caf3c2ea1ea2e27a2ec353080cd051a1183d29e301f1a2e782f3b",
+      "codeHash": "7e39f41712a7b2c435108948a7dac54b79d7b183d4eb24b0c6e4f26b570d771b"
+    }
+  ],
+  "elections": [
+    {
+      "id": "eleccion-demo",
+      "orgId": "asociacion-horizonte-demo",
+      "name": "Junta directiva 2026 · Demostración",
+      "purpose": "Ejercicio académico de elección de presidencia y tesorería.",
+      "status": "PUBLICADO",
+      "weighting": "IGUALITARIO",
+      "sessionSeconds": 180,
+      "openAt": 1791862463376,
+      "closeAt": 1823402063376,
+      "ballots": [
+        {
+          "id": "presidencia",
+          "name": "Presidencia",
+          "min": 1,
+          "max": 1,
+          "options": [
+            {
+              "id": "cand-1",
+              "nombre": "Sofía Mora",
+              "agrupacion": "Unión",
+              "propuesta": "Participación y formación continua."
+            },
+            {
+              "id": "cand-2",
+              "nombre": "Diego Vargas",
+              "agrupacion": "Horizonte",
+              "propuesta": "Transparencia y modernización de la organización."
+            },
+            {
+              "id": "cand-3",
+              "nombre": "Ana Rodríguez",
+              "agrupacion": "Unión",
+              "propuesta": "Participación y formación continua."
+            }
+          ]
+        },
+        {
+          "id": "tesoreria",
+          "name": "Tesorería",
+          "min": 1,
+          "max": 1,
+          "options": [
+            {
+              "id": "cand-4",
+              "nombre": "Luis Fernández",
+              "agrupacion": "Horizonte",
+              "propuesta": "Transparencia y modernización de la organización."
+            },
+            {
+              "id": "cand-5",
+              "nombre": "Mariana Solano",
+              "agrupacion": "Unión",
+              "propuesta": "Participación y formación continua."
+            }
+          ]
+        }
+      ],
+      "roll": [
+        {
+          "electorId": "elector-1",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-2",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-3",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-4",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-5",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-6",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-7",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-8",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-9",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-10",
+          "weight": 1
+        }
+      ],
+      "rollFrozenCount": 10,
+      "orderVersion": 1
+    },
+    {
+      "id": "borrador-demo",
+      "orgId": "asociacion-horizonte-demo",
+      "name": "Elección de prueba · Borrador",
+      "purpose": "Ejemplo para configurar y publicar desde Gestión.",
+      "status": "PUBLICADO",
+      "weighting": "IGUALITARIO",
+      "sessionSeconds": 180,
+      "openAt": 1792211663376,
+      "closeAt": 1792298063376,
+      "ballots": [
+        {
+          "id": "puesto-demo",
+          "name": "Representante",
+          "min": 1,
+          "max": 1,
+          "options": [
+            {
+              "id": "cand-6",
+              "nombre": "Carmen Solís",
+              "agrupacion": "Horizonte",
+              "propuesta": "Transparencia y modernización de la organización."
+            },
+            {
+              "id": "cand-7",
+              "nombre": "Javier Mora",
+              "agrupacion": "Unión",
+              "propuesta": "Participación y formación continua."
+            }
+          ]
+        }
+      ],
+      "roll": [
+        {
+          "electorId": "elector-1",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-2",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-3",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-4",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-5",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-6",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-7",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-8",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-9",
+          "weight": 1
+        },
+        {
+          "electorId": "elector-10",
+          "weight": 1
+        }
+      ],
+      "rollFrozenCount": 10,
+      "orderVersion": 1
+    }
+  ],
+  "participation": [
+    {
+      "electionId": "eleccion-demo",
+      "electorId": "elector-1",
+      "status": "EMITIDO"
+    }
+  ],
+  "votes": [
+    {
+      "id": "639a5b68-af19-4efb-86a6-e86770cbd78b",
+      "electionId": "eleccion-demo",
+      "ballotId": "presidencia",
+      "choices": [
+        "cand-1"
+      ],
+      "weight": 1
+    },
+    {
+      "id": "5fa00551-1931-4dee-aac0-f2a93c020971",
+      "electionId": "eleccion-demo",
+      "ballotId": "tesoreria",
+      "choices": [
+        "cand-5"
+      ],
+      "weight": 1
+    }
+  ],
+  "acts": []
+}
