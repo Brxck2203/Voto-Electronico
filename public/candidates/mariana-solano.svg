@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img">
+  <title>Retrato ilustrado de Mariana Solano</title>
+  <defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#fae8ff"/><stop offset="1" stop-color="#f5d0fe"/></linearGradient></defs>
+  <rect width="240" height="300" fill="url(#bg)"/><circle cx="51" cy="62" r="30" fill="#fdf4ff"/>
+  <path d="M35 300c9-64 39-95 85-95 43 0 76 32 86 95" fill="#7e22ce"/><path d="M103 190h35v44h-35z" fill="#a96c54"/>
+  <path d="M65 124c0-53 20-82 56-82 39 0 58 33 54 82l-9 57c-7 31-25 47-47 47-27 0-44-19-50-52z" fill="#241b25"/>
+  <path d="M81 116c0-37 15-58 40-58 30 0 44 25 42 61l-7 53c-5 26-20 42-37 42-20 0-34-17-40-43z" fill="#d49a78"/>
+  <path d="M67 131c-4-60 15-89 54-89 39 0 59 34 54 90-15-9-24-26-26-44-15 17-39 28-77 31z" fill="#241b25"/>
+  <path d="M98 130h14m24 0h13" stroke="#583b35" stroke-width="4" stroke-linecap="round"/><circle cx="105" cy="143" r="3" fill="#263238"/><circle cx="142" cy="143" r="3" fill="#263238"/>
+  <path d="M110 171q11 7 22-1" fill="none" stroke="#a65263" stroke-width="3" stroke-linecap="round"/>
+</svg>

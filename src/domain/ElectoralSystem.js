@@ -4,6 +4,7 @@ const uid = () => crypto.randomUUID()
 const fail = (message) => {
   throw new Error(message)
 }
+export const BLANK_VOTE_ID = '__VOTO_EN_BLANCO__'
 const positive = (n) => Number.isFinite(Number(n)) && Number(n) > 0
 const shuffle = (items) => {
   const result = [...items]
@@ -360,16 +361,24 @@ export class ElectoralSystem {
       fail('Nombre, propuesta y puesto existente son obligatorios.')
     if (data.biografia != null && typeof data.biografia !== 'string')
       fail('La biografía debe ser un texto.')
+    let c = e.candidates.find((candidate) => candidate.id === candidateId)
+    if (candidateId && (!c || c.estado === 'Retirado'))
+      fail('Candidatura no editable.')
+    const preservesLocalPortrait =
+      c?.fotografiaTipo === 'AVATAR_SVG' &&
+      data.fotografia === c.fotografia
     if (
       data.fotografia &&
+      !preservesLocalPortrait &&
       !/^data:image\/(png|jpeg);base64,/.test(data.fotografia)
     )
       fail('La fotografía debe ser un archivo JPG o PNG.')
-    if (data.fotografia?.length > Math.ceil((5 * 1024 * 1024 * 4) / 3) + 100)
+    if (
+      data.fotografia &&
+      !preservesLocalPortrait &&
+      data.fotografia.length > Math.ceil((5 * 1024 * 1024 * 4) / 3) + 100
+    )
       fail('La fotografía supera 5 MB.')
-    let c = e.candidates.find((c) => c.id === candidateId)
-    if (candidateId && (!c || c.estado === 'Retirado'))
-      fail('Candidatura no editable.')
     const ownerId = data.ownerId ?? c?.ownerId
     if (
       !this.#organizations
@@ -398,6 +407,11 @@ export class ElectoralSystem {
       nombre: data.nombreCompleto.trim(),
       fotografia: data.fotografia || '',
       foto: data.fotografia || '',
+      fotografiaTipo: !data.fotografia
+        ? ''
+        : preservesLocalPortrait
+          ? 'AVATAR_SVG'
+          : 'SUBIDA',
       presentacion: data.presentacion.trim(),
       propuesta: data.presentacion.trim(),
       biografia: (data.biografia ?? c.biografia ?? '').trim(),
@@ -602,6 +616,7 @@ export class ElectoralSystem {
       options: e.candidates.filter(
         (c) => c.puestoId === p.id && c.enabled && c.estado === 'Habilitado',
       ),
+      allowBlank: true,
     }))
   }
   publicationErrors(ctx, id) {
@@ -689,6 +704,7 @@ export class ElectoralSystem {
     return copy(
       this.#ballots(e).map((b) => ({
         ...b,
+        allowBlank: b.allowBlank === true,
         options: e.order[b.id]
           ? e.order[b.id]
               .map((id) => b.options.find((o) => o.id === id))
@@ -757,17 +773,26 @@ export class ElectoralSystem {
     const pending = []
     for (const b of ballots) {
       const selected = selections[b.id]
+        const choseBlank =
+        Array.isArray(selected) && selected.includes(BLANK_VOTE_ID)
       if (
         !Array.isArray(selected) ||
-        selected.length < b.min ||
+        (choseBlank
+          ? !b.allowBlank || selected.length !== 1
+          : selected.length < b.min) ||
         selected.length > b.max ||
         new Set(selected).size !== selected.length ||
-        selected.some((id) => !b.options.some((o) => o.id === id))
+        selected.some(
+          (optionId) =>
+            optionId !== BLANK_VOTE_ID &&
+            !b.options.some((option) => option.id === optionId),
+        )
       )
         fail(`PAPELETA_INVALIDA: revise las opciones y límites de ${b.name}.`)
       pending.push({
         ballotId: b.id,
-        choices: [...selected],
+        choices: choseBlank ? [] : [...selected],
+        blank: choseBlank,
         weight: e.weighting === 'IGUALITARIO' ? 1 : elector.weight,
       })
     }
@@ -820,7 +845,7 @@ export class ElectoralSystem {
       fail('ACCESO_DENEGADO: auditoría no autorizada.')
     return {
       participationFields: ['organizacion', 'proceso', 'elector', 'estado'],
-      ballotFields: ['proceso', 'opciones', 'peso'],
+      ballotFields: ['proceso', 'opciones', 'peso', 'votoEnBlanco'],
       sharedIndividualIdentifier: false,
       ballotsContainIdentity: false,
       individualVotesExposed: false,
@@ -855,8 +880,16 @@ export class ElectoralSystem {
       return {
         id: b.id,
         name: b.name,
+        allowBlank: b.allowBlank === true,
         rows,
-        blank: votes.filter((v) => !v.choices.length).length,
+        blank: votes.filter((v) => v.blank === true).length,
+        blankWeight:
+          votes
+            .filter((v) => v.blank === true)
+            .reduce((n, v) => n + Math.round(v.weight * 1000), 0) / 1000,
+        unanswered: votes.filter(
+          (v) => v.blank !== true && !v.choices.length,
+        ).length,
         tie: leaders.length > 1,
         leaders,
       }

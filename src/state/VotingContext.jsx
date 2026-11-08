@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { ElectoralSystem } from '../domain/ElectoralSystem.js'
+import { BLANK_VOTE_ID, ElectoralSystem } from '../domain/ElectoralSystem.js'
 import { createSeed } from './seed.js'
 const VotingContext = createContext(null)
 export function VotingProvider({ children }) {
@@ -100,11 +100,25 @@ export function VotingProvider({ children }) {
     const b = ballots.find((b) => b.id === ballotId),
       current = selections[ballotId] || []
     if (!session || election.emitted || clock >= session.expires) return
-    const next = current.includes(optionId)
-      ? current.filter((id) => id !== optionId)
-      : b.max === 1
-        ? [optionId]
-        : [...current, optionId]
+    if (!b || (optionId === BLANK_VOTE_ID && !b.allowBlank)) {
+      setError('La opción seleccionada no está disponible en esta papeleta.')
+      return
+    }
+    if (optionId !== BLANK_VOTE_ID && !b.options.some((option) => option.id === optionId)) {
+      setError('La candidatura seleccionada no está disponible en esta papeleta.')
+      return
+    }
+    const blankSelected = current.includes(BLANK_VOTE_ID)
+    const next =
+      optionId === BLANK_VOTE_ID
+        ? blankSelected
+          ? []
+          : [BLANK_VOTE_ID]
+        : current.includes(optionId)
+          ? current.filter((id) => id !== optionId && id !== BLANK_VOTE_ID)
+          : b.max === 1
+            ? [optionId]
+            : [...current.filter((id) => id !== BLANK_VOTE_ID), optionId]
     if (next.length > b.max) {
       setError(`Puede seleccionar como máximo ${b.max} opciones en ${b.name}.`)
       return

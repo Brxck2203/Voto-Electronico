@@ -25,9 +25,11 @@ export function ElectionConfigForm() {
   const org = v.organizations.find((o) => o.id === v.context.orgId)
   useEffect(() => {
     setDraft(e)
-    setRoll(e.roll || [])
     setAdmins(e.admins || [])
   }, [e.version, e.id])
+  useEffect(() => {
+    setRoll(e.roll || [])
+  }, [e.id])
   const errors = v.read('publicationErrors')
   const save = (event) => {
     event.preventDefault()
@@ -39,6 +41,11 @@ export function ElectionConfigForm() {
       weighting: draft.weighting,
       calendar: draft.calendar,
     })
+  }
+  const saveRoll = () => {
+    if (v.act('setRoll', roll)) {
+      setRoll(roll.map((elector) => ({ ...elector, weight: Number(elector.weight) })))
+    }
   }
   return (
     <div className="config-page">
@@ -83,9 +90,8 @@ export function ElectionConfigForm() {
           </button>
         </div>
         <p className="muted">
-          Abrir ahora adelanta el calendario para esta demostración. El cierre
-          es irreversible. Editar una configuración publicada exige publicarla
-          nuevamente.
+          Abrir ahora adelanta el calendario. El cierre es irreversible; los
+          cambios a una configuración publicada requieren publicarla de nuevo.
         </p>
         {e.configPending?.length > 0 && (
           <div className="validation-list" role="status">
@@ -197,15 +203,15 @@ export function ElectionConfigForm() {
               />
             </label>
             <label>
-              Ponderación
+              Esquema de voto
               <select
                 value={draft.weighting}
                 onChange={(x) =>
                   setDraft({ ...draft, weighting: x.target.value })
                 }
               >
-                <option value="IGUALITARIO">Un elector, peso 1</option>
-                <option value="PONDERADO">Peso configurado en el padrón</option>
+                <option value="IGUALITARIO">Voto igualitario</option>
+                <option value="PONDERADO">Voto ponderado</option>
               </select>
             </label>
             <label>
@@ -226,9 +232,7 @@ export function ElectionConfigForm() {
           </div>
           <h3>Calendario</h3>
           <p className="muted">
-            Edición en UTC. Debajo de cada campo se muestra la hora equivalente
-            en {draft.calendar.timezone}. El padrón debe cerrarse antes de abrir
-            la votación.
+            Edición en UTC. El cierre del padrón debe ocurrir antes de abrir la votación.
           </p>
           <div className="form-grid">
             {fields.map(([key, label]) => (
@@ -252,14 +256,6 @@ export function ElectionConfigForm() {
                     })
                   }
                 />
-                <small>
-                  {Number.isFinite(draft.calendar[key]) &&
-                    new Intl.DateTimeFormat('es-CR', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                      timeZone: draft.calendar.timezone,
-                    }).format(draft.calendar[key])}
-                </small>
               </label>
             ))}
           </div>
@@ -404,9 +400,9 @@ export function ElectionConfigForm() {
       <section className="panel">
         <h2>Padrón y pesos</h2>
         <p>
-          Pesos positivos con hasta tres decimales. Cada opción seleccionada
-          recibe el peso completo del elector; una papeleta sin selección cuenta
-          como participación, sin sumar a ninguna opción.
+          En voto ponderado, cada candidatura seleccionada recibe el peso del elector.
+          En voto igualitario, el peso efectivo es 1. Los pesos configurados se conservan
+          para el padrón mientras su esquema no cambie.
         </p>
         <fieldset disabled={!e.editable || v.clock >= e.calendar.rollClose}>
           <div className="roll-grid">
@@ -436,7 +432,8 @@ export function ElectionConfigForm() {
                         type="number"
                         min="0.001"
                         step="0.001"
-                        value={r.weight}
+                        value={draft.weighting === 'IGUALITARIO' ? 1 : r.weight}
+                        disabled={draft.weighting !== 'PONDERADO'}
                         onChange={(x) =>
                           setRoll(
                             roll.map((r) =>
@@ -454,7 +451,7 @@ export function ElectionConfigForm() {
           </div>
           <button
             className="btn btn--primary"
-            onClick={() => v.act('setRoll', roll)}
+            onClick={saveRoll}
           >
             Guardar padrón
           </button>

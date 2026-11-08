@@ -100,7 +100,8 @@ test('HU-31: consulta de límites relacionados con opciones habilitadas',()=>{
  assert.throws(()=>s.setLimits(A,E,p.id,1,5),/opciones habilitadas/)
 })
 test('HU-32: esquema igualitario da peso 1, ponderado utiliza padrón',()=>{
- const {s,open}=setup();s.configure(A,E,{weighting:'PONDERADO'});open()
+ const {s,open}=setup();s.configure(A,E,{weighting:'PONDERADO'})
+ s.setRoll(A,E,[{userId:'o0-elector2',weight:2}]);open()
  cast(s,2);s.close(A,E)
  const rows=s.results(A,E).ballots[0].rows
  assert.equal(rows.reduce((acc,row)=>acc+row.weight,0),2)

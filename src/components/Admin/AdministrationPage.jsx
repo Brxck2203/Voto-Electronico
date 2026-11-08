@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useVoting } from '../../state/VotingContext.jsx'
 import { validateImage } from '../../domain/ElectoralSystem.js'
+import { CandidateImage } from '../CandidateImage.jsx'
 
 const estadoClase = {
   Pendiente: 'admin-status--pending',
@@ -477,7 +478,7 @@ export function AdministrationPage() {
               }}
             />
             {candidatoDraft.fotografia && (
-              <img
+              <CandidateImage
                 className="admin-photo-preview"
                 src={candidatoDraft.fotografia}
                 alt="Vista previa de la fotografía seleccionada"
@@ -620,7 +621,7 @@ export function AdministrationPage() {
                   onClick={() => setCandidatoDetalle(candidatura)}
                 >
                   {candidatura.fotografia ? (
-                    <img src={candidatura.fotografia} alt="" />
+                    <CandidateImage src={candidatura.fotografia} alt="" />
                   ) : (
                     <span className="admin-avatar" aria-hidden="true">
                       {candidatura.nombreCompleto.charAt(0)}
@@ -872,7 +873,7 @@ function CandidateSummary({ draft, puesto, estado }) {
   return (
     <div className="candidate-summary">
       {fotografia ? (
-        <img src={fotografia} alt={`Fotografía de ${nombre}`} />
+        <CandidateImage src={fotografia} alt={`Retrato ilustrado de ${nombre}`} />
       ) : (
         <span className="admin-avatar admin-avatar--large" aria-hidden="true">
           {nombre.charAt(0)}

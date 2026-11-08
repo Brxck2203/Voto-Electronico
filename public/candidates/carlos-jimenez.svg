@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img">
+  <title>Retrato ilustrado de Carlos Jiménez</title>
+  <defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#e0f2fe"/><stop offset="1" stop-color="#bae6fd"/></linearGradient></defs>
+  <rect width="240" height="300" fill="url(#bg)"/><circle cx="48" cy="60" r="28" fill="#f0f9ff"/>
+  <path d="M34 300c8-64 40-95 86-95 44 0 77 33 86 95" fill="#0369a1"/><path d="M103 190h35v44h-35z" fill="#9e6d52"/>
+  <path d="M68 119c0-49 21-76 53-76 35 0 54 29 52 77l-8 57c-6 31-26 49-46 49-24 0-43-19-49-51z" fill="#25272b"/>
+  <path d="M81 116c0-35 15-57 40-57 30 0 44 24 42 61l-7 53c-5 25-20 41-37 41-20 0-34-17-40-43z" fill="#bf8967"/>
+  <path d="M76 105c6-29 22-45 47-45 23 0 39 12 47 37-22 0-39-8-51-23-10 15-24 25-43 31" fill="#25272b"/>
+  <path d="M98 130h14m24 0h13" stroke="#4e3a32" stroke-width="4" stroke-linecap="round"/><circle cx="105" cy="143" r="3" fill="#263238"/><circle cx="142" cy="143" r="3" fill="#263238"/>
+  <path d="M111 171q10 5 20 0" fill="none" stroke="#89514b" stroke-width="3" stroke-linecap="round"/>
+</svg>

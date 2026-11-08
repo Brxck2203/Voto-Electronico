@@ -20,7 +20,6 @@ function App() {
     <div className="app">
       <header className="workspace-header">
         <div>
-          <p className="eyebrow">Participación · Decisión · Transparencia</p>
           <h1>Voto Electrónico</h1>
           <p>{org.name}</p>
         </div>
@@ -29,11 +28,8 @@ function App() {
         </span>
       </header>
       <details className="demo-context">
-        <summary>Contexto de pruebas · datos en memoria</summary>
-        <p>
-          Elija una identidad precargada. No es un inicio de sesión. Al recargar
-          se reinicia toda la demostración.
-        </p>
+        <summary>Participante activo</summary>
+        <p>Seleccione la organización y la identidad para continuar.</p>
         <div className="form-grid">
           <label>
             Organización

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img">
+  <title>Retrato ilustrado de Daniela Rojas</title>
+  <defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#ffedd5"/><stop offset="1" stop-color="#fed7aa"/></linearGradient></defs>
+  <rect width="240" height="300" fill="url(#bg)"/><circle cx="185" cy="61" r="33" fill="#fff7ed"/>
+  <path d="M35 300c8-64 40-95 85-95 43 0 76 33 85 95" fill="#9a3412"/><path d="M103 191h35v43h-35z" fill="#b27c61"/>
+  <path d="M65 126c-2-54 18-84 56-84 38 0 57 32 54 83l-9 57c-6 30-25 47-47 47-26 0-44-19-50-52z" fill="#452b25"/>
+  <path d="M81 116c0-37 15-58 40-58 30 0 44 25 42 61l-7 53c-5 25-20 41-37 41-20 0-34-17-40-43z" fill="#d5a082"/>
+  <path d="M66 128c-4-60 16-86 55-86 39 0 57 32 54 88-16-7-26-21-30-40-15 18-39 29-75 38" fill="#452b25"/>
+  <path d="M98 130h14m24 0h13" stroke="#63483e" stroke-width="4" stroke-linecap="round"/><circle cx="105" cy="143" r="3" fill="#263238"/><circle cx="142" cy="143" r="3" fill="#263238"/>
+  <path d="M110 171q11 7 22-1" fill="none" stroke="#a55158" stroke-width="3" stroke-linecap="round"/>
+</svg>

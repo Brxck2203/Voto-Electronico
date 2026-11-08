@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img">
+  <title>Retrato ilustrado de Valeria Castro</title>
+  <defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#ecfccb"/><stop offset="1" stop-color="#d9f99d"/></linearGradient></defs>
+  <rect width="240" height="300" fill="url(#bg)"/><circle cx="48" cy="60" r="27" fill="#f7fee7"/>
+  <path d="M35 300c8-64 40-95 85-95 43 0 76 33 85 95" fill="#4d7c0f"/><path d="M103 191h35v43h-35z" fill="#b67b5e"/>
+  <path d="M65 122c-1-52 20-80 56-80 38 0 57 31 54 82l-9 57c-6 30-25 48-47 48-26 0-44-20-50-52z" fill="#38272b"/>
+  <path d="M81 116c0-37 15-58 40-58 30 0 44 25 42 61l-7 53c-5 25-20 41-37 41-20 0-34-17-40-43z" fill="#d79c7b"/>
+  <path d="M66 126c-3-59 17-84 55-84 38 0 57 31 54 85-14-6-28-19-36-38-14 17-36 29-73 37" fill="#38272b"/>
+  <path d="M98 130h14m24 0h13" stroke="#5b4139" stroke-width="4" stroke-linecap="round"/><circle cx="105" cy="143" r="3" fill="#263238"/><circle cx="142" cy="143" r="3" fill="#263238"/>
+  <path d="M110 171q11 7 22 0" fill="none" stroke="#a75258" stroke-width="3" stroke-linecap="round"/>
+</svg>

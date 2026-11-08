@@ -2,6 +2,11 @@
   box-sizing: border-box;
 }
 
+:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
 body {
   margin: 0;
   font-family: 'Segoe UI', system-ui, sans-serif;
@@ -1147,6 +1152,24 @@ fieldset:disabled {
   margin-top: auto;
   padding: 0.5rem;
 }
+.ballot-check--blank {
+  width: fit-content;
+  min-width: 220px;
+  margin: 0.75rem 0 0;
+  border: 2px solid #dce5eb;
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 600;
+}
+.ballot-check--blank:has(input:checked) {
+  border-color: #176889;
+  background: #eef8fb;
+}
+.ballot-check input {
+  min-width: 1.1rem;
+  min-height: 1.1rem;
+  accent-color: #176889;
+}
 .session-clock {
   font-weight: 700;
   color: #174866;
@@ -1158,6 +1181,8 @@ fieldset:disabled {
 .process-dialog {
   max-width: 600px;
   width: calc(100% - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
   border: 0;
   border-radius: 15px;
   padding: 1.5rem;

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img">
+  <title>Retrato ilustrado de Ana Rodríguez</title>
+  <defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#dbeafe"/><stop offset="1" stop-color="#bfdbfe"/></linearGradient></defs>
+  <rect width="240" height="300" fill="url(#bg)"/><circle cx="185" cy="58" r="36" fill="#eff6ff"/>
+  <path d="M37 300c8-65 41-96 83-96s75 31 83 96" fill="#2563eb"/><path d="M103 191h34v42h-34z" fill="#c47d5b"/>
+  <path d="M69 118c0-49 22-76 53-76 37 0 55 31 52 79l-9 58c-7 30-26 48-46 48-25 0-43-20-50-51z" fill="#3b241d"/>
+  <path d="M81 119c0-37 16-59 41-59 31 0 44 24 42 61l-7 51c-5 25-20 41-37 41-20 0-34-17-40-43z" fill="#d99873"/>
+  <path d="M72 122c2-50 20-76 53-76 30 0 48 22 51 61-19-2-32-17-39-32-12 21-35 35-65 39" fill="#3b241d"/>
+  <path d="M98 130h13m24 0h13" stroke="#57382d" stroke-width="4" stroke-linecap="round"/><circle cx="105" cy="143" r="3" fill="#263238"/><circle cx="142" cy="143" r="3" fill="#263238"/>
+  <path d="M110 169q11 8 22 0" fill="none" stroke="#9e4f52" stroke-width="3" stroke-linecap="round"/>
+</svg>

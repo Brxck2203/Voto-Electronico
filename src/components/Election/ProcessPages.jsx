@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useVoting } from '../../state/VotingContext.jsx'
+import { BLANK_VOTE_ID } from '../../domain/ElectoralSystem.js'
+import { CandidateImage } from '../CandidateImage.jsx'
 function Dialog({ title, children, close }) {
   const ref = useRef(null)
   useEffect(() => {
@@ -31,10 +33,24 @@ export function VotingPage() {
   const valid =
     v.ballots.length > 0 &&
     v.ballots.every(
-      (b) =>
-        (v.selections[b.id] || []).length >= b.min &&
-        (v.selections[b.id] || []).length <= b.max,
+      (b) => {
+        const selected = v.selections[b.id] || []
+        const blank = selected.includes(BLANK_VOTE_ID)
+        return blank
+          ? b.allowBlank && selected.length === 1
+          : selected.length >= b.min && selected.length <= b.max
+      },
     )
+  const selectionLabel = (b) => {
+    const selected = v.selections[b.id] || []
+    if (selected.includes(BLANK_VOTE_ID)) return 'Voto en blanco'
+    return (
+      selected
+        .map((optionId) => b.options.find((option) => option.id === optionId)?.nombre)
+        .filter(Boolean)
+        .join(', ') || (b.min === 0 ? 'Sin selección' : 'Pendiente')
+    )
+  }
   useEffect(() => {
     if (!v.session) setConfirm(false)
   }, [v.session])
@@ -81,7 +97,7 @@ export function VotingPage() {
           <p>
             Seleccione {b.min === b.max ? b.min : `entre ${b.min} y ${b.max}`}{' '}
             {b.max === 1 ? 'opción' : 'opciones'}.
-            {b.min === 0 ? ' Puede dejar esta papeleta sin selección.' : ''}
+            {b.min === 0 ? ' Esta papeleta puede quedar sin respuesta.' : ''}
           </p>
           <div className="candidate-grid">
             {b.options.map((c, i) => {
@@ -97,7 +113,7 @@ export function VotingPage() {
                     aria-label={`Ver propuestas de ${c.nombre}`}
                   >
                     {c.foto ? (
-                      <img src={c.foto} alt={c.nombre} />
+                      <CandidateImage src={c.foto} alt={`Retrato ilustrado de ${c.nombre}`} />
                     ) : (
                       <span>
                         {c.nombre
@@ -111,7 +127,7 @@ export function VotingPage() {
                   <h3>{c.nombre}</h3>
                   <p>{c.agrupacion}</p>
                   <button className="text-button" onClick={() => setDetail(c)}>
-                    Ver propuesta
+                    Ver candidatura
                   </button>
                   {v.session && !e.emitted && (
                     <label className="ballot-check">
@@ -127,6 +143,16 @@ export function VotingPage() {
               )
             })}
           </div>
+          {b.allowBlank && v.session && !e.emitted && (
+            <label className="ballot-check ballot-check--blank">
+              <input
+                type="checkbox"
+                checked={(v.selections[b.id] || []).includes(BLANK_VOTE_ID)}
+                onChange={() => v.select(b.id, BLANK_VOTE_ID)}
+              />
+              Voto en blanco
+            </label>
+          )}
           {!b.options.length && (
             <p>No hay opciones habilitadas para este puesto.</p>
           )}
@@ -137,10 +163,7 @@ export function VotingPage() {
           <h2>Resumen de selección</h2>
           {v.ballots.map((b) => (
             <p key={b.id}>
-              <strong>{b.name}:</strong>{' '}
-              {(v.selections[b.id] || [])
-                .map((id) => b.options.find((o) => o.id === id)?.nombre)
-                .join(', ') || (b.min === 0 ? 'Sin selección' : 'Pendiente')}
+              <strong>{b.name}:</strong> {selectionLabel(b)}
             </p>
           ))}
           <button
@@ -171,10 +194,7 @@ export function VotingPage() {
           </p>
           {v.ballots.map((b) => (
             <p key={b.id}>
-              <strong>{b.name}:</strong>{' '}
-              {(v.selections[b.id] || [])
-                .map((id) => b.options.find((o) => o.id === id)?.nombre)
-                .join(', ') || 'Sin selección'}
+              <strong>{b.name}:</strong> {selectionLabel(b)}
             </p>
           ))}
           <div className="action-row">
@@ -432,8 +452,8 @@ export function ResultsPage() {
         </div>
         <p>
           {result.weighting === 'PONDERADO'
-            ? 'Conteo ponderado: cada selección recibe el peso electoral completo.'
-            : 'Conteo igualitario: cada selección tiene peso 1.'}
+            ? 'Voto ponderado: cada candidatura seleccionada recibe el peso registrado del elector.'
+            : 'Voto igualitario: cada candidatura seleccionada tiene peso 1.'}
         </p>
         <button
           className="btn btn--secondary"
@@ -468,6 +488,15 @@ export function ResultsPage() {
               <strong>{r.weight}</strong>
             </div>
           ))}
+          {b.allowBlank && (
+            <p>
+              Votos en blanco: {b.blank}
+              {result.weighting === 'PONDERADO' && ` · Peso agregado: ${b.blankWeight}`}
+            </p>
+          )}
+          {b.unanswered > 0 && (
+            <p>Papeletas sin respuesta: {b.unanswered}</p>
+          )}
           {detail && (
             <>
               <div className="table-scroll">
@@ -491,8 +520,7 @@ export function ResultsPage() {
                 </table>
               </div>
               <p>
-                Papeletas sin selección: {b.blank}. Los resultados son agregados
-                y no incluyen identidades ni papeletas individuales.
+                Papeletas sin respuesta: {b.unanswered}. Los conteos son agregados.
               </p>
             </>
           )}

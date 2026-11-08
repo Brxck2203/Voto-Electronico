@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  BLANK_VOTE_ID,
   ElectoralSystem,
   validateImage,
 } from '../src/domain/ElectoralSystem.js'
@@ -37,6 +38,11 @@ function vote(s, n, selection = selections(s)) {
 test('precarga diez candidatos, dos puestos y dos organizaciones aisladas', () => {
   const { s } = fixture()
   assert.equal(s.view(admin, id).candidates.length, 10)
+  assert.ok(s.view(admin, id).candidates.every((candidate) => {
+    const wordCount = candidate.biografia.trim().split(/\s+/).length
+    return wordCount >= 40 && wordCount <= 70 && candidate.fotografiaTipo === 'AVATAR_SVG'
+  }))
+  assert.ok(s.view(admin, id).roll.every((elector) => elector.weight === 1))
   assert.deepEqual(
     s.ballots(admin, id).map((b) => b.options.length),
     [5, 5],
@@ -226,7 +232,7 @@ test('resultados ocultos hasta el cierre; votos y padrón no se entregan al elec
   s.close(admin, id)
   assert.equal(s.results(voter(2), id).abstentions, 9)
 })
-test('ponderación decimal, selección múltiple, papeleta en blanco y empate', () => {
+test('ponderación decimal, selección múltiple, blanco explícito y empate', () => {
   const { s, open } = fixture(),
     e = s.view(admin, id)
   s.configure(admin, id, { weighting: 'PONDERADO' })
@@ -241,16 +247,144 @@ test('ponderación decimal, selección múltiple, papeleta en blanco y empate', 
     b = selections(s, 1),
     first = e.positions[0].id
   vote(s, 1, { ...a, [first]: [a[first][0], b[first][0]] })
-  vote(s, 2, { ...b, [first]: [] })
+  vote(s, 2, { ...b, [first]: [BLANK_VOTE_ID] })
   s.close(admin, id)
   const result = s.results(admin, id)
   assert.equal(result.ballots[0].blank, 1)
+  assert.equal(result.ballots[0].blankWeight, 1.001)
+  assert.equal(result.ballots[0].unanswered, 0)
+  assert.equal(result.ballots[1].blank, 0)
   assert.equal(result.ballots[0].tie, true)
   assert.equal(
     result.ballots[0].rows.reduce((n, r) => n + r.weight, 0),
     2.002,
   )
   assert.equal(result.ballots[1].tie, true)
+  assert.equal(result.abstentions, 8)
+})
+test('voto en blanco explícito cumple una papeleta obligatoria y no afecta otro puesto', () => {
+  const { s, open } = fixture()
+  const [presidency, treasury] = s.ballots(voter(1), id)
+  open()
+  vote(s, 1, {
+    [presidency.id]: [BLANK_VOTE_ID],
+    [treasury.id]: [treasury.options[0].id],
+  })
+  s.close(admin, id)
+  const result = s.results(admin, id)
+  assert.equal(result.participation, 1)
+  assert.equal(result.abstentions, 9)
+  assert.equal(result.ballots[0].blank, 1)
+  assert.equal(result.ballots[0].blankWeight, 1)
+  assert.equal(result.ballots[0].rows.reduce((total, row) => total + row.votes, 0), 0)
+  assert.equal(result.ballots[1].blank, 0)
+  assert.equal(result.ballots[1].rows.reduce((total, row) => total + row.votes, 0), 1)
+  assert.deepEqual(result.ballots[0].leaders, [])
+})
+test('emisión rechaza blancos mezclados, opciones arbitrarias y papeletas obligatorias sin responder', () => {
+  const { s, open } = fixture()
+  const [presidency, treasury] = s.ballots(voter(1), id)
+  open()
+  const token = s.begin(voter(1), id).token
+  for (const selection of [
+    {
+      [presidency.id]: [BLANK_VOTE_ID, presidency.options[0].id],
+      [treasury.id]: [treasury.options[0].id],
+    },
+    {
+      [presidency.id]: [],
+      [treasury.id]: [treasury.options[0].id],
+    },
+    {
+      [presidency.id]: ['candidatura-inexistente'],
+      [treasury.id]: [treasury.options[0].id],
+    },
+  ]) {
+    assert.throws(() => s.emit(voter(1), id, token, selection), /PAPELETA_INVALIDA/)
+    assert.equal(s.view(admin, id).participationCount, 0)
+  }
+})
+test('voto igualitario fuerza peso 1 aunque el padrón conserve pesos ponderados', () => {
+  const { s, open } = fixture()
+  s.setRoll(admin, id, [{ userId: voter(1).userId, weight: 2.5 }])
+  assert.equal(s.view(admin, id).roll[0].weight, 2.5)
+  open()
+  vote(s, 1)
+  s.close(admin, id)
+  const result = s.results(admin, id)
+  assert.ok(result.ballots.flatMap((ballot) => ballot.rows)
+    .filter((row) => row.votes)
+    .every((row) => row.weight === 1))
+})
+test('guardar configuración no altera pesos del padrón antes ni después de guardarlo', () => {
+  const { s } = fixture(),
+    before = s.view(admin, id)
+  s.configure(admin, id, { weighting: 'PONDERADO' })
+  assert.deepEqual(s.view(admin, id).roll, before.roll)
+
+  const roll = before.roll.map((elector, index) => ({
+    ...elector,
+    weight: index === 0 ? 2.5 : elector.weight,
+  }))
+  s.setRoll(admin, id, roll)
+  const configured = s.view(admin, id)
+  assert.equal(configured.weighting, 'PONDERADO')
+  assert.equal(configured.roll[0].weight, 2.5)
+
+  s.configure(admin, id, { purpose: 'Propósito actualizado.' })
+  assert.equal(s.view(admin, id).roll[0].weight, 2.5)
+})
+test('voto ponderado usa el peso autorizado del padrón, incluidos valores positivos menores que uno', () => {
+  const { s, open } = fixture()
+  s.configure(admin, id, { weighting: 'PONDERADO' })
+  s.setRoll(admin, id, [{ userId: voter(1).userId, weight: 0.5 }])
+  open()
+  vote(s, 1)
+  s.close(admin, id)
+  const result = s.results(admin, id)
+  assert.ok(result.ballots.flatMap((ballot) => ballot.rows)
+    .filter((row) => row.votes)
+    .every((row) => row.weight === 0.5))
+})
+test('una papeleta con mínimo cero sin respuesta no se registra como voto en blanco', () => {
+  const { s, open } = fixture(),
+    e = s.view(admin, id)
+  s.setLimits(admin, id, e.positions[0].id, 0, 1)
+  open()
+  const selection = selections(s)
+  selection[e.positions[0].id] = []
+  vote(s, 1, selection)
+  s.close(admin, id)
+  const result = s.results(admin, id)
+  assert.equal(result.ballots[0].blank, 0)
+  assert.equal(result.ballots[0].blankWeight, 0)
+  assert.equal(result.ballots[0].unanswered, 1)
+  assert.equal(result.participation, 1)
+  assert.equal(result.abstentions, 9)
+})
+test('una modalidad de grupos no admite la marca de voto en blanco por puesto', () => {
+  const { s, open } = fixture(),
+    e = s.view(admin, id)
+  for (const candidate of e.candidates) s.option(admin, id, candidate.id, false)
+  s.configure(admin, id, { mode: 'POR_GRUPOS' })
+  s.group(
+    admin,
+    id,
+    'Equipo de prueba',
+    e.positions.map((position) => ({
+      positionId: position.id,
+      candidateId: e.candidates.find((candidate) => candidate.puestoId === position.id).id,
+    })),
+  )
+  const group = s.view(admin, id).groups[0]
+  s.option(admin, id, group.id, true)
+  open()
+  const token = s.begin(voter(1), id).token
+  assert.throws(
+    () => s.emit(voter(1), id, token, { grupos: [BLANK_VOTE_ID] }),
+    /PAPELETA_INVALIDA/,
+  )
+  assert.equal(s.view(admin, id).participationCount, 0)
 })
 test('candidatura nueva no acepta habilitación inyectada y cambiar puesto exige verificar nuevamente', () => {
   const { s } = fixture(),
@@ -276,7 +410,7 @@ test('candidatura nueva no acepta habilitación inyectada y cambiar puesto exige
   assert.equal(moved.enabled, false)
   assert.ok(moved.requisitos.every((r) => !r.cumplido))
   assert.throws(
-    () => s.candidate(admin, id, { ...a, ownerId: 'o1-elector1' }),
+    () => s.candidate(admin, id, { ...a, fotografia: '', ownerId: 'o1-elector1' }),
     /identidad/,
   )
 })
@@ -301,9 +435,10 @@ test('requisitos opcionales no impiden habilitar y nombres repetidos se rechazan
   s.enableCandidate(admin, id, c.id)
   assert.equal(s.view(admin, id).candidates[0].estado, 'Habilitado')
 })
-test('HU-02 y HU-09: guardar y consultar biografía, fotografía y propuesta sin inventar biografías', () => {
+test('HU-02 y HU-09: conservar biografía y retrato local al editar propuesta', () => {
   const { s } = fixture(), e = s.view(admin, id), c = e.candidates[0]
-  assert.equal(c.biografia, '')
+  assert.ok(c.biografia.length > 0)
+  assert.equal(c.fotografiaTipo, 'AVATAR_SVG')
   s.candidate(admin, id, {
     ...c,
     biografia: 'Experiencia en la organización y participación comunitaria.',
@@ -312,6 +447,12 @@ test('HU-02 y HU-09: guardar y consultar biografía, fotografía y propuesta sin
   const updated = s.ballots(voter(1), id)[0].options.find((o) => o.id === c.id)
   assert.equal(updated.biografia, 'Experiencia en la organización y participación comunitaria.')
   assert.equal(updated.propuesta, 'Mejorar la rendición de cuentas.')
+  assert.equal(updated.fotografia, c.fotografia)
+  assert.equal(updated.fotografiaTipo, 'AVATAR_SVG')
+  assert.throws(
+    () => s.candidate(admin, id, { ...updated, fotografia: 'https://example.test/portrait.jpg' }, c.id),
+    /JPG o PNG/,
+  )
   assert.throws(() => s.candidate(admin, id, { ...c, biografia: 25 }), /biografía/)
 })
 test('HU-12 y HU-13: aprobación, rechazo, pendiente y habilitación son operaciones independientes', () => {

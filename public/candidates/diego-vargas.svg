@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img">
+  <title>Retrato ilustrado de Diego Vargas</title>
+  <defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#ffedd5"/><stop offset="1" stop-color="#fed7aa"/></linearGradient></defs>
+  <rect width="240" height="300" fill="url(#bg)"/><circle cx="185" cy="61" r="32" fill="#fff7ed"/>
+  <path d="M34 300c8-63 39-95 86-95 44 0 77 33 86 95" fill="#c2410c"/><path d="M103 190h35v44h-35z" fill="#b87955"/>
+  <path d="M68 117c0-48 21-74 53-74 35 0 54 28 52 76l-8 59c-6 31-26 49-46 49-24 0-43-19-49-51z" fill="#49352d"/>
+  <path d="M81 116c0-35 15-57 40-57 30 0 44 24 42 61l-7 53c-5 25-20 41-37 41-20 0-34-17-40-43z" fill="#d09a72"/>
+  <path d="M76 104c8-28 24-44 47-44 22 0 38 11 47 35-25 2-43-5-55-20-10 15-23 24-39 29" fill="#49352d"/>
+  <path d="M98 130h14m24 0h13" stroke="#594037" stroke-width="4" stroke-linecap="round"/><circle cx="105" cy="143" r="3" fill="#263238"/><circle cx="142" cy="143" r="3" fill="#263238"/>
+  <path d="M110 170q11 6 22 0" fill="none" stroke="#98584d" stroke-width="3" stroke-linecap="round"/>
+</svg>
